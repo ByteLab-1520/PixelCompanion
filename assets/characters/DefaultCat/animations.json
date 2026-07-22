@@ -1,0 +1,10 @@
+{
+  "animations": {
+    "idle": { "id": "idle", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 600 }], "loop": true },
+    "walk": { "id": "walk", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 260 }], "loop": true },
+    "drag": { "id": "drag", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 250 }], "loop": true },
+    "fall": { "id": "fall", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 180 }], "loop": true },
+    "land": { "id": "land", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 220 }], "loop": false, "transitionAfter": "idle" }
+  }
+}
+

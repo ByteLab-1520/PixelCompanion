@@ -1,0 +1,7 @@
+{
+  "click": ["Hello!", "I'm right here.", "Let's take it one step at a time."],
+  "hungry": ["A small snack would be nice."],
+  "tired": ["I might rest for a little while."],
+  "media": ["Now listening to {title}."]
+}
+

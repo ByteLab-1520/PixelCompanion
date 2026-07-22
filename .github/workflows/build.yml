@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore PixelCompanion.slnx
+      - run: dotnet build PixelCompanion.slnx -c Release --no-restore
+      - run: dotnet run --project tests/PixelCompanion.Core.Tests -c Release --no-build
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore PixelCompanion.slnx
+      - run: choco install innosetup --yes --no-progress
+      - shell: powershell
+        run: .\scripts\Build-WindowsInstaller.ps1 -InnoCompiler '${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PixelCompanion-Windows-Installer
+          path: |
+            artifacts/windows/installer/*.exe
+            artifacts/windows/installer/*.sha256

@@ -1,0 +1,4 @@
+<Project>
+  <!-- Pixel Companion is telemetry-free, including third-party build telemetry. -->
+  <Target Name="AvaloniaStats" />
+</Project>
