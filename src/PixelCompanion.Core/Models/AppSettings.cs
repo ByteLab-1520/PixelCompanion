@@ -17,6 +17,7 @@ public sealed record AppSettings
     public bool DoNotDisturb { get; init; }
     public bool IncludeSystemAreas { get; init; }
     public bool AutoStart { get; init; }
+    public bool AutoCheckUpdates { get; init; } = true;
     public double CharacterScale { get; init; } = 2;
     public double Opacity { get; init; } = 1;
     public double DialogueFrequency { get; init; } = 0.5;
@@ -30,4 +31,3 @@ public sealed record MovementRegion(string Id, string Name, double X, double Y, 
 {
     public bool IsValid => Width > 0 && Height > 0;
 }
-

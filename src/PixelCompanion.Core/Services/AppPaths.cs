@@ -13,6 +13,11 @@ public sealed class AppPaths
         Locales = Path.Combine(Root, "locales");
         Backups = Path.Combine(Root, "backups");
         Logs = Path.Combine(Root, "logs");
+        UserCharacter = Path.Combine(Characters, "UserCharacter");
+        UserCharacterImages = Path.Combine(UserCharacter, "images");
+        UserCharacterProfileFile = Path.Combine(UserCharacter, "character-images.json");
+        Updates = Path.Combine(Root, "updates");
+        UpdateStateFile = Path.Combine(Updates, "update-state.json");
     }
 
     public string Root { get; }
@@ -24,10 +29,15 @@ public sealed class AppPaths
     public string Locales { get; }
     public string Backups { get; }
     public string Logs { get; }
+    public string UserCharacter { get; }
+    public string UserCharacterImages { get; }
+    public string UserCharacterProfileFile { get; }
+    public string Updates { get; }
+    public string UpdateStateFile { get; }
 
     public void EnsureCreated()
     {
-        foreach (var path in new[] { Root, Characters, Locales, Backups, Logs })
+        foreach (var path in new[] { Root, Characters, Locales, Backups, Logs, UserCharacter, UserCharacterImages, Updates })
             Directory.CreateDirectory(path);
     }
 
@@ -39,4 +49,3 @@ public sealed class AppPaths
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PixelCompanion");
     }
 }
-

@@ -1,6 +1,7 @@
 using PixelCompanion.Core.Models;
 using PixelCompanion.Core.Services;
 using System.Text.Json;
+using System.Net;
 
 var tests = new (string Name, Func<Task> Run)[]
 {
@@ -9,7 +10,10 @@ var tests = new (string Name, Func<Task> Run)[]
     ("localization falls back to English then key", TestLocalizationFallback),
     ("atomic JSON store round-trips and recovers", TestAtomicStore),
     ("dialogue selection excludes recent lines", TestDialogueSelection),
-    ("bundled character pack is valid", TestBundledPack)
+    ("bundled character pack is valid", TestBundledPack),
+    ("character images validate contents and persist slots", TestCharacterImages),
+    ("GitHub release update metadata is parsed safely", TestReleaseUpdate),
+    ("locale JSON files are valid", TestLocaleFiles)
 };
 
 var failures = new List<string>();
@@ -90,7 +94,72 @@ static async Task TestBundledPack()
     Assert(issues.Count == 0, string.Join("; ", issues.Select(x => x.Message)));
 }
 
+static async Task TestCharacterImages()
+{
+    var root = Path.Combine(Path.GetTempPath(), "PixelCompanionTests", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var validImage = Path.Combine(root, "source.png");
+        await File.WriteAllBytesAsync(validImage, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+        var fakeImage = Path.Combine(root, "fake.jpg");
+        await File.WriteAllTextAsync(fakeImage, "not an image");
+        var paths = new AppPaths(Path.Combine(root, "data"));
+        var service = new UserCharacterService(paths, new AtomicJsonStore());
+        var imported = await service.ImportAsync(CharacterImageSlot.WalkLeft, validImage);
+        Assert(imported.Success, imported.Error ?? "valid image was rejected");
+        var profile = await service.LoadAsync();
+        Assert(service.ResolvePath(profile, CharacterImageSlot.WalkLeft) is not null, "slot was not persisted");
+        var rejected = await service.ImportAsync(CharacterImageSlot.Default, fakeImage);
+        Assert(!rejected.Success, "a fake JPG was accepted");
+    }
+    finally { Directory.Delete(root, true); }
+}
+
+static async Task TestReleaseUpdate()
+{
+    const string hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    var json = $$"""
+        {
+          "tag_name": "v0.2.0",
+          "html_url": "https://github.com/ByteLab-1520/PixelCompanion/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "PixelCompanion-Installer.exe",
+              "browser_download_url": "https://example.test/PixelCompanion-Installer.exe",
+              "digest": "sha256:{{hash}}"
+            }
+          ]
+        }
+        """;
+    using var client = new HttpClient(new StubHttpHandler(json));
+    var result = await new GitHubReleaseUpdateService(client).CheckAsync(new Version(0, 1, 0));
+    var release = result.Release;
+    Assert(result.IsUpdateAvailable && release?.Version == new Version(0, 2, 0), "new version was not detected");
+    Assert(release?.AssetSha256 == hash, "asset digest was not normalized");
+}
+
+static async Task TestLocaleFiles()
+{
+    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "locales"));
+    foreach (var name in new[] { "en.json", "ko.json" })
+    {
+        await using var stream = File.OpenRead(Path.Combine(root, name));
+        using var document = await JsonDocument.ParseAsync(stream);
+        Assert(document.RootElement.ValueKind == JsonValueKind.Object, $"{name} is not a JSON object");
+    }
+}
+
 static void Assert(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+sealed class StubHttpHandler(string json) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+        Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json)
+        });
 }
