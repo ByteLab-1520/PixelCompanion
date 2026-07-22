@@ -29,7 +29,7 @@ jobs:
       - run: dotnet restore PixelCompanion.slnx
       - run: choco install innosetup --yes --no-progress
       - shell: powershell
-        run: .\scripts\Build-WindowsInstaller.ps1 -InnoCompiler '${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe'
+        run: .\scripts\Build-WindowsInstaller.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: PixelCompanion-Windows-Installer
