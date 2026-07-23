@@ -17,6 +17,8 @@ Pixel Companion은 Windows와 macOS를 위한 오프라인 우선, 비방해형 
 - 우선순위 행동 결정, 쿨다운과 최근 대사 반복 방지
 - 제한된 오프라인 경과 시간이 적용되는 다마고치 상태값
 - 캐릭터 팩 유효성 검사와 플랫폼 기능 실패 시 안전한 대체 동작
+- 드래그 앤 드롭 PNG, JPEG, GIF 캐릭터 이미지 슬롯과 걷기 프레임 대체
+- GitHub Release 자동 확인과 서명을 검증하는 별도 Windows 업데이터
 
 ## Windows 설치
 
@@ -54,7 +56,9 @@ Inno Setup 6을 설치한 다음 저장소 루트에서 실행합니다.
 powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1
 ```
 
-완성된 단일 설치 파일은 `artifacts/windows/installer/`에 생성됩니다. 자세한 내용은 [Windows 패키징 안내서](packaging/windows/README.md)를 참고하세요.
+완성된 서명 전 설치 파일은 `artifacts/windows/installer/`에 생성됩니다. 자세한 내용은 [Windows 패키징 안내서](packaging/windows/README.md)를 참고하세요.
+
+서명된 공개 릴리스는 버전 태그에서 생성합니다. 필요한 SignPath 저장소 설정과 서명 후 체크섬 규칙은 [릴리스 절차](docs/releasing.md)를 참고하세요.
 
 ## 사용자 데이터
 

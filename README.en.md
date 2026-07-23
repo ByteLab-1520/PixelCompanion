@@ -17,6 +17,8 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Priority-based behavior decisions, cooldowns, and dialogue repetition prevention
 - Tamagotchi-style state values with bounded offline progression
 - Character-pack validation and safe fallbacks when platform services are unavailable
+- Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
+- Daily GitHub Release checks and a separately packaged, signature-verifying Windows updater
 
 ## Install on Windows
 
@@ -55,6 +57,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1
 ```
 
 The single installer executable is written to `artifacts/windows/installer/`. See the [Windows packaging guide](packaging/windows/README.md) for details.
+
+Signed public releases are built from version tags. See the [release process](docs/releasing.md) for the required SignPath repository configuration and post-signing checksum rules.
 
 ## User data
 

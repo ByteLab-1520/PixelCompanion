@@ -13,7 +13,8 @@ var tests = new (string Name, Func<Task> Run)[]
     ("bundled character pack is valid", TestBundledPack),
     ("character images validate contents and persist slots", TestCharacterImages),
     ("GitHub release update metadata is parsed safely", TestReleaseUpdate),
-    ("locale JSON files are valid", TestLocaleFiles)
+    ("locale JSON files are valid", TestLocaleFiles),
+    ("release versions stay consistent", TestReleaseVersionConsistency)
 };
 
 var failures = new List<string>();
@@ -148,6 +149,22 @@ static async Task TestLocaleFiles()
         using var document = await JsonDocument.ParseAsync(stream);
         Assert(document.RootElement.ValueKind == JsonValueKind.Object, $"{name} is not a JSON object");
     }
+}
+
+static async Task TestReleaseVersionConsistency()
+{
+    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+    var props = await File.ReadAllTextAsync(Path.Combine(root, "Directory.Build.props"));
+    var buildScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Build-WindowsInstaller.ps1"));
+    var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
+    var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
+    var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
+    const string version = "0.2.0";
+    Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
+    Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
+    Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");
+    Assert(smokeTestScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "smoke-test script version is inconsistent");
+    Assert(installer.Contains($"MyAppVersion \"{version}\"", StringComparison.Ordinal), "Inno Setup version is inconsistent");
 }
 
 static void Assert(bool condition, string message)

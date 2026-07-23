@@ -21,6 +21,7 @@ public sealed class ConfigWindow : Window
     private readonly CheckBox _topmost = new() { Content = "Always on top / 항상 위" };
     private readonly CheckBox _sound = new() { Content = "Sound / 소리" };
     private readonly CheckBox _dnd = new() { Content = "Do not disturb / 방해 금지" };
+    private readonly CheckBox _autoCheckUpdates = new() { Content = "Automatically check for updates / 자동으로 업데이트 확인" };
     private readonly TextBlock _status = new();
     private readonly ListBox _validation = new();
     private readonly Dictionary<CharacterImageSlot, Image> _characterPreviews = [];
@@ -80,6 +81,7 @@ public sealed class ConfigWindow : Window
         _topmost.IsCheckedChanged += (_, _) => _dirty = true;
         _sound.IsCheckedChanged += (_, _) => _dirty = true;
         _dnd.IsCheckedChanged += (_, _) => _dirty = true;
+        _autoCheckUpdates.IsCheckedChanged += (_, _) => _dirty = true;
 
         var panel = FormPanel();
         panel.Children.Add(Label("UI language / UI 언어", _language));
@@ -88,6 +90,7 @@ public sealed class ConfigWindow : Window
         panel.Children.Add(_topmost);
         panel.Children.Add(_sound);
         panel.Children.Add(_dnd);
+        panel.Children.Add(_autoCheckUpdates);
         return new ScrollViewer { Content = panel };
     }
 
@@ -280,6 +283,7 @@ public sealed class ConfigWindow : Window
         _topmost.IsChecked = _settings.AlwaysOnTop;
         _sound.IsChecked = _settings.SoundEnabled;
         _dnd.IsChecked = _settings.DoNotDisturb;
+        _autoCheckUpdates.IsChecked = _settings.AutoCheckUpdates;
         _dirty = false;
         await RefreshCharacterImagesAsync();
         await RefreshStatusAsync();
@@ -294,7 +298,8 @@ public sealed class ConfigWindow : Window
             CharacterScale = (double)(_scale.Value ?? 2),
             AlwaysOnTop = _topmost.IsChecked == true,
             SoundEnabled = _sound.IsChecked == true,
-            DoNotDisturb = _dnd.IsChecked == true
+            DoNotDisturb = _dnd.IsChecked == true,
+            AutoCheckUpdates = _autoCheckUpdates.IsChecked == true
         };
         await _store.SaveAsync(_paths.SettingsFile, _settings);
         _dirty = false;

@@ -8,7 +8,7 @@ Build it from the repository root:
 powershell -ExecutionPolicy Bypass -File scripts\Build-WindowsInstaller.ps1
 ```
 
-The resulting installer and checksum are written to `artifacts/windows/installer/`.
+The resulting unsigned installer and build checksum are written to `artifacts/windows/installer/`. The checksum ends in `.unsigned.sha256` because code signing changes the installer bytes.
 
 Installed components:
 
@@ -19,3 +19,5 @@ Installed components:
 - optional desktop shortcut and login auto-start entry.
 
 User data under `%LOCALAPPDATA%\PixelCompanion` is deliberately retained during uninstall. Current development builds are unsigned, so Windows SmartScreen may warn until release signing is configured.
+
+Public releases must be finalized only after code signing. See [the release process](../../docs/releasing.md) for SignPath configuration, signature verification, and post-signing checksum generation.

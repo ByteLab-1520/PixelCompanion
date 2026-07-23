@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.1.0',
+    [string] $Version = '0.2.0',
     [ValidateSet('win-x64')]
     [string] $RuntimeIdentifier = 'win-x64',
     [ValidateSet('Release', 'Debug')]
@@ -119,10 +119,15 @@ if (-not (Test-Path -LiteralPath $installer)) {
 
 $releaseInstaller = Join-Path $installerRoot 'PixelCompanion-Installer.exe'
 Copy-Item -LiteralPath $installer -Destination $releaseInstaller -Force
+$releaseChecksum = $releaseInstaller + '.sha256'
+if (Test-Path -LiteralPath $releaseChecksum) {
+    Remove-Item -LiteralPath $releaseChecksum -Force
+}
 
 $hash = Get-FileHash -LiteralPath $releaseInstaller -Algorithm SHA256
 $hashLine = "$($hash.Hash.ToLowerInvariant())  $([System.IO.Path]::GetFileName($releaseInstaller))"
-Set-Content -LiteralPath ($releaseInstaller + '.sha256') -Value $hashLine -Encoding Ascii
+Set-Content -LiteralPath ($releaseInstaller + '.unsigned.sha256') -Value $hashLine -Encoding Ascii
 
-Write-Output "Installer: $releaseInstaller"
-Write-Output "SHA256:   $($hash.Hash.ToLowerInvariant())"
+Write-Output "Unsigned installer: $releaseInstaller"
+Write-Output "Build SHA256:       $($hash.Hash.ToLowerInvariant())"
+Write-Output 'Run Finalize-WindowsRelease.ps1 only after the installer has been code-signed.'
