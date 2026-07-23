@@ -1,34 +1,153 @@
-# Pixel Companion
+<div align="center">
+
+```text
+┌──────────────────────────────────────┐
+│        PIXEL COMPANION  v0.2         │
+│       작은 친구, 조용한 동행         │
+└──────────────────────────────────────┘
+```
+
+**작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
+
+[![Version](https://img.shields.io/badge/version-0.2.0-6f7cff?style=flat-square)](Directory.Build.props)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
+[![Offline](https://img.shields.io/badge/Core-Offline-00a86b?style=flat-square)](.)
+[![License](https://img.shields.io/badge/License-MIT-00a86b?style=flat-square)](LICENSE)
 
 [한국어](README.md) | [English](README.en.md)
 
-Pixel Companion은 Windows와 macOS를 위한 오프라인 우선, 비방해형 도트 데스크톱 펫입니다. 생성형 AI나 외부 AI 서비스 없이 상태 머신, 조건, 확률, 쿨다운과 현지화된 대사 데이터로 자연스러운 행동을 구현합니다.
+</div>
 
-> 현재 Windows 10/11 x64 설치 파일을 우선 제공합니다. macOS 배포 패키지는 후속 단계에서 지원할 예정입니다.
+---
 
-## 현재 구현된 기능
+## ░░ Pixel Companion은 어떤 프로그램인가요?
 
-- 투명하고 항상 위에 표시되는 Avalonia 캐릭터 창
-- 픽셀이 흐려지지 않는 최근접 이웃 렌더링
-- 실제 경과 시간 기반 이동, 대기, 드래그, 낙하와 착지
-- 클릭 대사, 먹이 주기와 놀아주기 반응
-- 영어·한국어 리소스와 영어/번역 키 폴백
-- 데스크톱 펫과 데이터를 공유하는 별도의 고급 설정 프로그램
-- 우선순위 행동 결정, 쿨다운과 최근 대사 반복 방지
-- 제한된 오프라인 경과 시간이 적용되는 다마고치 상태값
-- 캐릭터 팩 유효성 검사와 플랫폼 기능 실패 시 안전한 대체 동작
-- 드래그 앤 드롭 PNG, JPEG, GIF 캐릭터 이미지 슬롯과 걷기 프레임 대체
-- GitHub Release 자동 확인과 서명을 검증하는 별도 Windows 업데이터
+Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 캐릭터입니다.
 
-## Windows 설치
+마우스를 빼앗거나 창을 강제로 움직이지 않습니다. 화면 한가운데를 오래 가리지도 않습니다. 사용자가 집중하고 있을 때는 조용히 머물고, 잠깐 쉬는 순간에는 가벼운 반응으로 존재감을 보여 주는 방향을 목표로 합니다.
 
-[GitHub Releases](https://github.com/ByteLab-1520/PixelCompanion/releases)에서 최신 `PixelCompanion-Installer.exe`를 내려받아 실행합니다.
+생성형 AI나 온라인 AI 서비스는 사용하지 않습니다. 캐릭터의 행동은 상태, 조건, 확률, 쿨다운과 대사 데이터를 조합해 만듭니다. 핵심 기능은 인터넷 연결 없이 작동하며, 사용자 데이터도 컴퓨터 안에 보관합니다.
 
-Windows가 게시자를 확인할 수 없다는 경고를 표시할 수 있습니다. 현재 설치 파일에는 상용 코드 서명이 적용되지 않았으므로, 이 저장소에서 받은 파일인지와 Release에 첨부된 SHA-256 값을 확인해 주세요.
+| | |
+|---|---|
+| 🐾 | 걷기, 기다리기, 드래그, 낙하와 착지 |
+| 🖼️ | 내 이미지로 캐릭터 모습 설정 |
+| 💬 | 상황과 친밀도에 따른 짧은 대사 |
+| 🍙 | 배고픔, 행복도, 피로도 같은 다마고치 상태값 |
+| 🌐 | 한국어·영어 지원 |
+| 🔒 | 온라인 계정과 원격 분석 없이 로컬 저장 |
+| 🪟 | Windows 10·11 x64 우선 지원 |
 
-## 소스에서 실행
+---
 
-.NET 10 SDK를 설치한 다음 다음 명령을 실행합니다.
+## ░░ 지금 할 수 있는 것
+
+- 투명한 캐릭터 창을 바탕화면 위에 표시합니다.
+- 픽셀이 흐려지지 않도록 최근접 이웃 방식으로 이미지를 확대합니다.
+- 실제 경과 시간을 기준으로 천천히 걷고, 걷는 사이에는 충분히 쉬도록 움직입니다.
+- 캐릭터를 마우스로 잡아 옮기면 놓인 자리로 떨어진 뒤 다시 균형을 잡습니다.
+- 클릭, 먹이 주기, 놀아주기 같은 간단한 상호작용을 지원합니다.
+- 트레이 아이콘과 우클릭 메뉴에서 표시, 숨기기, 일시정지와 설정을 바꿀 수 있습니다.
+- 실행 프로그램과 분리된 고급 설정 프로그램이 같은 사용자 데이터를 공유합니다.
+- 설정과 다마고치 상태를 안전하게 저장하고, 손상된 파일은 백업에서 복구합니다.
+- 한국어 번역이 없으면 영어를, 영어도 없으면 번역 키를 표시해 프로그램이 멈추지 않게 합니다.
+
+아직 모든 계획이 완성된 것은 아닙니다. 타이머, 미디어 반응, 배터리 반응과 세밀한 캐릭터 제작 도구는 아래 로드맵에 따라 차례로 추가할 예정입니다.
+
+---
+
+## ░░ v0.2.0에서 달라지는 점
+
+`v0.2.0`은 “내 캐릭터를 쉽게 넣는 방법”과 “안전하게 다음 버전으로 넘어가는 방법”에 초점을 맞췄습니다.
+
+### 이미지로 캐릭터 만들기
+
+고급 설정의 캐릭터 화면에서 이미지를 칸 위로 끌어 놓거나 직접 선택할 수 있습니다.
+
+| 이미지 칸 | 쓰임새 |
+|---|---|
+| `기본` | 서 있거나 쉬고 있을 때 |
+| `뒷모습` | 뒤를 바라보는 동작을 위한 준비 이미지 |
+| `걷기 1 · 왼발` | 첫 번째 걷기 프레임 |
+| `걷기 2 · 오른발` | 두 번째 걷기 프레임 |
+| `걷기 3 · 중간` | 양쪽 걸음 사이를 잇는 프레임 |
+
+- `PNG`, `JPG`, `JPEG`, `GIF`를 지원합니다.
+- 확장자만 확인하지 않고 실제 이미지 형식도 함께 검사합니다.
+- 가져온 이미지는 사용자 데이터 폴더로 복사되므로 원본을 옮겨도 계속 사용할 수 있습니다.
+- 빠진 걷기 이미지는 기본 이미지로 자연스럽게 대신합니다.
+- GIF는 현재 첫 번째 프레임을 사용합니다.
+
+### 안전한 자동 업데이트 기반
+
+- 하루에 한 번 GitHub Release에서 새 버전을 확인합니다.
+- 고급 설정에서 자동 확인을 끌 수 있습니다.
+- 업데이트 버튼을 누르면 별도의 `PixelCompanion.Updater.exe`가 설치를 이어받습니다.
+- 설치 전에 SHA-256과 Windows 코드 서명을 모두 확인합니다.
+- 서명이 없거나 체크섬이 다르면 기존 설치를 건드리지 않습니다.
+- 설치가 끝나면 Pixel Companion을 다시 실행합니다.
+
+> 공개된 `v0.1.0`에는 자동 업데이터가 들어 있지 않습니다. 따라서 `v0.2.0`은 한 번 직접 설치해야 하며, 자동 업데이트는 그다음 버전부터 사용할 수 있습니다.
+
+### 배포 과정도 함께 정리했습니다
+
+- 프로젝트와 인스톨러 버전을 `0.2.0`으로 맞췄습니다.
+- Windows 인스톨러를 실제로 임시 설치하고 세 실행 파일의 버전을 확인한 뒤 제거하는 검사를 추가했습니다.
+- 서명 전 체크섬과 공개 Release용 체크섬을 구분했습니다.
+- Release 태그가 `main`에 포함된 커밋을 가리킬 때만 배포를 진행합니다.
+- SignPath가 돌려준 설치 파일의 서명이 유효할 때만 GitHub Release를 생성합니다.
+
+---
+
+## ░░ 설치하기
+
+현재 공개 버전은 [GitHub Releases](https://github.com/ByteLab-1520/PixelCompanion/releases)에서 받을 수 있습니다.
+
+1. 최신 Release의 `PixelCompanion-Installer.exe`를 내려받습니다.
+2. 설치 파일을 실행합니다.
+3. 설치가 끝나면 시작 메뉴에서 Pixel Companion을 실행합니다.
+
+현재 공개 설치 파일은 코드 서명 준비 단계에 있어 Windows가 게시자를 확인할 수 없다는 경고를 보여 줄 수 있습니다. 반드시 이 저장소의 Release에서 받은 파일인지 확인하고, 함께 제공되는 SHA-256 값과 비교해 주세요.
+
+---
+
+## ░░ 내 이미지로 캐릭터 바꾸기
+
+```text
+Pixel Companion 우클릭
+        ↓
+고급 설정 열기
+        ↓
+Character / 캐릭터 탭
+        ↓
+이미지를 원하는 칸에 드래그 앤 드롭
+        ↓
+저장
+```
+
+이미지는 다음 위치에 복사됩니다.
+
+```text
+%LOCALAPPDATA%\PixelCompanion\characters\UserCharacter\
+```
+
+설정 프로그램을 닫아 두어도 캐릭터는 정상적으로 움직입니다. 실행 중 이미지를 바꾸면 잠시 뒤 새 이미지를 다시 불러옵니다.
+
+---
+
+## ░░ 소스에서 실행하기
+
+필요한 것:
+
+```text
+.NET SDK      10.0
+Avalonia      12.1
+Windows       10 / 11
+```
+
+저장소를 받은 뒤 다음 명령을 실행합니다.
 
 ```powershell
 dotnet restore PixelCompanion.slnx
@@ -36,37 +155,100 @@ dotnet build PixelCompanion.slnx -c Release
 dotnet run --project src/PixelCompanion.Desktop
 ```
 
-고급 설정 프로그램은 별도로 실행할 수 있습니다.
+고급 설정만 따로 실행하려면:
 
 ```powershell
 dotnet run --project src/PixelCompanion.Config
 ```
 
-외부 테스트 프레임워크에 의존하지 않는 핵심 테스트를 실행합니다.
+핵심 검사를 실행하려면:
 
 ```powershell
 dotnet run --project tests/PixelCompanion.Core.Tests
 ```
 
-## Windows 인스톨러 빌드
+---
 
-Inno Setup 6을 설치한 다음 저장소 루트에서 실행합니다.
+## ░░ Windows 인스톨러 만들기
+
+Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.0
 ```
 
-완성된 서명 전 설치 파일은 `artifacts/windows/installer/`에 생성됩니다. 자세한 내용은 [Windows 패키징 안내서](packaging/windows/README.md)를 참고하세요.
+서명 전 설치 파일은 다음 폴더에 만들어집니다.
 
-서명된 공개 릴리스는 버전 태그에서 생성합니다. 필요한 SignPath 저장소 설정과 서명 후 체크섬 규칙은 [릴리스 절차](docs/releasing.md)를 참고하세요.
+```text
+artifacts/windows/installer/
+```
 
-## 사용자 데이터
+서명 전 체크섬은 `.unsigned.sha256`으로 끝납니다. 공개 Release용 체크섬은 코드 서명이 끝난 설치 파일을 기준으로 다시 생성합니다.
 
-- Windows: `%LOCALAPPDATA%\PixelCompanion`
-- macOS: `~/Library/Application Support/PixelCompanion`
+자세한 과정은 [Windows 패키징 안내서](packaging/windows/README.md)와 [릴리스 절차](docs/releasing.md)를 참고해 주세요.
 
-설계 범위와 향후 계획은 [아키텍처 문서](docs/architecture.md)와 [로드맵](docs/roadmap.md)에서 확인할 수 있습니다.
+---
 
-## 라이선스
+## ░░ 앞으로의 로드맵
 
-소스 코드는 [MIT License](LICENSE)로 배포됩니다. 캐릭터 자산은 각 캐릭터 매니페스트에 기록된 별도 라이선스를 따르며, 기본 오리지널 캐릭터는 CC0-1.0으로 표시되어 있습니다.
+기능을 한꺼번에 늘리기보다, 먼저 안정적으로 함께 지낼 수 있는 캐릭터를 만드는 데 집중합니다.
+
+| 버전 | 목표 | 예정된 작업 |
+|---|---|---|
+| `v0.2.0` | 캐릭터 이미지와 업데이트 기반 | 이미지 슬롯, 걷기 프레임, 안전한 업데이터, 서명된 Release 자동화 |
+| `v0.3.0` | 바탕화면 사용성 | 이동 영역 편집기, 다중 모니터·DPI 복구, 클릭 통과, 자동 시작과 트레이 메뉴 개선 |
+| `v0.4.0` | 함께 돌보는 재미 | 상태값 변화, 먹이·청소·쓰다듬기·수면, 타이머와 집중 타이머 |
+| `v0.5.0` | Windows 상황 인식 | 자리 비움·복귀, 전체 화면, 시스템 부하, 배터리·충전, 음악·영상 반응 |
+| `v0.6.0` | 캐릭터 제작 도구 | 스프라이트 시트, 프레임 순서와 FPS, 기준점, 히트박스, 소품과 조건부 대사 |
+| `v0.7.0` | macOS 시험 지원 | Apple Silicon·x64 빌드, 메뉴 막대, 서명·공증과 배포 패키지 |
+| `v1.0.0` | 안정화 | 장시간 실행, 성능 기준, 설정 복구, 접근성, 보안과 제작 문서 정리 |
+
+세부 계획은 [로드맵 문서](docs/roadmap.md)에서 계속 다듬습니다.
+
+---
+
+## ░░ 프로젝트 구성
+
+```text
+PixelCompanion/
+├── src/
+│   ├── PixelCompanion.Desktop/   ← 캐릭터 실행 프로그램
+│   ├── PixelCompanion.Config/    ← 고급 설정 프로그램
+│   ├── PixelCompanion.Core/      ← 상태, 저장, 행동과 업데이트 로직
+│   └── PixelCompanion.Updater/   ← Windows 자동 업데이트 실행기
+├── assets/
+│   ├── characters/               ← 기본 캐릭터 팩
+│   └── locales/                  ← 한국어·영어 리소스
+├── scripts/                      ← 빌드, 설치 검사와 Release 스크립트
+├── packaging/windows/            ← Inno Setup 설정
+├── tests/                        ← 핵심 동작 검사
+└── docs/                         ← 구조, 로드맵과 배포 문서
+```
+
+---
+
+## ░░ 사용자 데이터와 개인정보
+
+Windows에서는 다음 위치에 설정과 캐릭터 상태를 저장합니다.
+
+```text
+%LOCALAPPDATA%\PixelCompanion
+```
+
+Pixel Companion은 키보드 입력 내용, 비밀번호, 화면 이미지, 마이크 음성과 개인 파일 내용을 수집하지 않습니다. 현재 재생 정보나 배터리 상태 같은 기능을 추가하더라도 필요한 정보만 컴퓨터 안에서 처리하는 것을 원칙으로 합니다.
+
+---
+
+## ░░ 라이선스
+
+프로그램 소스 코드는 [MIT License](LICENSE)로 배포합니다.
+
+캐릭터 이미지는 캐릭터마다 별도의 라이선스를 가질 수 있습니다. 기본 오리지널 캐릭터는 자유롭게 재배포할 수 있도록 CC0-1.0으로 표시되어 있습니다.
+
+---
+
+<div align="center">
+
+**Pixel Companion** — _화면 한쪽에서, 조용히 함께._
+
+</div>
