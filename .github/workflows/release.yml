@@ -6,7 +6,6 @@ on:
       - 'v*.*.*'
 
 permissions:
-  actions: read
   contents: write
 
 concurrency:
@@ -16,11 +15,6 @@ concurrency:
 jobs:
   windows-release:
     runs-on: windows-latest
-    env:
-      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-      SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-      SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,7 +24,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Validate tag and signing configuration
+      - name: Validate release tag
         id: version
         shell: powershell
         run: |
@@ -50,67 +44,37 @@ jobs:
             throw 'Release tags must point to a commit contained in origin/main.'
           }
 
-          $required = @(
-            'SIGNPATH_API_TOKEN',
-            'SIGNPATH_ORGANIZATION_ID',
-            'SIGNPATH_PROJECT_SLUG',
-            'SIGNPATH_SIGNING_POLICY_SLUG'
-          )
-          foreach ($name in $required) {
-            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
-              throw "Required GitHub secret or variable is missing: $name"
-            }
+          $notes = "docs/releases/v$version.md"
+          if (-not (Test-Path -LiteralPath $notes -PathType Leaf)) {
+            throw "Release notes were not found: $notes"
           }
 
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "notes=$notes" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-      - name: Build unsigned Windows installer
+      - name: Build Windows installer
         shell: powershell
         run: .\scripts\Build-WindowsInstaller.ps1 -Version '${{ steps.version.outputs.version }}'
 
-      - name: Smoke-test unsigned Windows installer
+      - name: Smoke-test installer
         shell: powershell
         run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version '${{ steps.version.outputs.version }}'
 
-      - name: Upload unsigned artifact for SignPath
-        id: upload-unsigned
-        uses: actions/upload-artifact@v4
-        with:
-          name: PixelCompanion-Unsigned-Installer-${{ github.ref_name }}
-          path: artifacts/windows/installer/PixelCompanion-Installer.exe
-          if-no-files-found: error
-
-      - name: Submit SignPath signing request
-        uses: signpath/github-action-submit-signing-request@v2
-        with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ vars.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: '${{ vars.SIGNPATH_PROJECT_SLUG }}'
-          signing-policy-slug: '${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}'
-          github-artifact-id: '${{ steps.upload-unsigned.outputs.artifact-id }}'
-          wait-for-completion: true
-          output-artifact-directory: '${{ github.workspace }}/artifacts/windows/signed'
-
-      - name: Verify signature and finalize release files
+      - name: Prepare unsigned release files
         shell: powershell
         run: |
-          $signedInstaller = Get-ChildItem -LiteralPath 'artifacts/windows/signed' -Recurse -File -Filter 'PixelCompanion-Installer.exe' |
-            Select-Object -First 1
-          if ($null -eq $signedInstaller) {
-            throw 'SignPath output did not contain PixelCompanion-Installer.exe.'
-          }
-
-          .\scripts\Finalize-WindowsRelease.ps1 `
-            -SignedInstallerPath $signedInstaller.FullName `
+          .\scripts\Prepare-UnsignedWindowsRelease.ps1 `
+            -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe `
             -Version '${{ steps.version.outputs.version }}'
 
-      - name: Upload signed release artifact
+      - name: Upload verified release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PixelCompanion-Signed-Installer-${{ github.ref_name }}
+          name: PixelCompanion-Windows-Installer-${{ github.ref_name }}
           path: |
             artifacts/windows/release/PixelCompanion-Installer.exe
             artifacts/windows/release/PixelCompanion-Installer.exe.sha256
+            artifacts/windows/release/UNSIGNED_INSTALLER.txt
           if-no-files-found: error
 
       - name: Create GitHub Release
@@ -121,6 +85,7 @@ jobs:
           gh release create '${{ github.ref_name }}' `
             'artifacts/windows/release/PixelCompanion-Installer.exe' `
             'artifacts/windows/release/PixelCompanion-Installer.exe.sha256' `
+            'artifacts/windows/release/UNSIGNED_INSTALLER.txt' `
             --verify-tag `
             --title 'Pixel Companion ${{ github.ref_name }}' `
-            --generate-notes
+            --notes-file '${{ steps.version.outputs.notes }}'

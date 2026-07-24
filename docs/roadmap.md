@@ -9,9 +9,10 @@
 
 ## Current release target: 0.2.0
 
-- Complete SignPath project approval and configure the required GitHub secret and variables.
-- Merge the tested feature branch, create tag `v0.2.0`, and verify the signed installer release workflow end to end.
-- Version 0.1.0 users install 0.2.0 manually once; automatic updates begin with later releases.
+- Publish the tested Windows installer with a final SHA-256 checksum and an explicit unsigned-build notice.
+- Merge the tested feature branch, create tag `v0.2.0`, and verify the installer release workflow end to end.
+- Version 0.1.0 users install 0.2.0 manually. Unsigned updates continue to open the official Release page rather than installing unattended.
+- Revisit trusted code signing after the project establishes broader public adoption and independent trust signals.
 
 ## Next milestones
 

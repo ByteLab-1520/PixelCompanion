@@ -9,6 +9,7 @@ public sealed class GitHubReleaseUpdateService
 {
     public const string InstallerAssetName = "PixelCompanion-Installer.exe";
     public const string ChecksumAssetName = "PixelCompanion-Installer.exe.sha256";
+    public const string SignatureMarkerAssetName = "PixelCompanion-Installer.exe.authenticode.json";
     public static readonly Uri LatestReleaseApi = new("https://api.github.com/repos/ByteLab-1520/PixelCompanion/releases/latest");
     private readonly HttpClient _client;
 
@@ -49,7 +50,16 @@ public sealed class GitHubReleaseUpdateService
             if (!Uri.TryCreate(release.HtmlUrl, UriKind.Absolute, out var releasePage))
                 releasePage = new Uri("https://github.com/ByteLab-1520/PixelCompanion/releases");
 
-            var info = new ReleaseUpdateInfo(version!, release.TagName!, releasePage, installerUri, checksumUri, digest);
+            var supportsAutomaticInstall = assets.Any(asset =>
+                string.Equals(asset.Name, SignatureMarkerAssetName, StringComparison.Ordinal));
+            var info = new ReleaseUpdateInfo(
+                version!,
+                release.TagName!,
+                releasePage,
+                installerUri,
+                checksumUri,
+                digest,
+                supportsAutomaticInstall);
             return new(version! > currentVersion, info);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)

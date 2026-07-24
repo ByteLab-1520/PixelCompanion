@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [string] $SignedInstallerPath,
+    [string] $InstallerPath,
     [ValidatePattern('^\d+\.\d+\.\d+$')]
     [string] $Version = '0.2.0',
     [string] $OutputDirectory
@@ -15,14 +15,14 @@ if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $repoRoot 'artifacts\windows\release'
 }
 
-$source = [System.IO.Path]::GetFullPath($SignedInstallerPath)
+$source = [System.IO.Path]::GetFullPath($InstallerPath)
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
-    throw "Signed installer was not found: $source"
+    throw "Installer was not found: $source"
 }
 
 $signature = Get-AuthenticodeSignature -LiteralPath $source
-if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid) {
-    throw "Release installer must have a valid trusted Authenticode signature. Current status: $($signature.Status)"
+if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::NotSigned) {
+    throw "This release path accepts only an explicitly unsigned installer. Current status: $($signature.Status)"
 }
 
 $versionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($source)
@@ -39,30 +39,26 @@ if (-not $output.StartsWith($artifactsRoot, [System.StringComparison]::OrdinalIg
 
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $releaseInstaller = Join-Path $output 'PixelCompanion-Installer.exe'
-if (-not $source.Equals($releaseInstaller, [System.StringComparison]::OrdinalIgnoreCase)) {
-    Copy-Item -LiteralPath $source -Destination $releaseInstaller -Force
-}
+Copy-Item -LiteralPath $source -Destination $releaseInstaller -Force
 
-$hash = Get-FileHash -LiteralPath $releaseInstaller -Algorithm SHA256
-$hashValue = $hash.Hash.ToLowerInvariant()
+$hashValue = (Get-FileHash -LiteralPath $releaseInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
 $checksumPath = $releaseInstaller + '.sha256'
 Set-Content -LiteralPath $checksumPath -Value "$hashValue  PixelCompanion-Installer.exe" -Encoding Ascii
 
-$markerPath = $releaseInstaller + '.authenticode.json'
-$timestampCertificateSubject = $null
-if ($null -ne $signature.TimeStamperCertificate) {
-    $timestampCertificateSubject = $signature.TimeStamperCertificate.Subject
-}
-$marker = [ordered]@{
-    schemaVersion = 1
-    fileName = 'PixelCompanion-Installer.exe'
-    version = $Version
-    sha256 = $hashValue
-    signerSubject = $signature.SignerCertificate.Subject
-    signerThumbprint = $signature.SignerCertificate.Thumbprint
-    timestampCertificateSubject = $timestampCertificateSubject
-}
-$marker | ConvertTo-Json | Set-Content -LiteralPath $markerPath -Encoding utf8
+$noticePath = Join-Path $output 'UNSIGNED_INSTALLER.txt'
+$notice = @'
+PIXEL COMPANION UNSIGNED INSTALLER
+
+This installer does not have an Authenticode code signature.
+Windows SmartScreen may display an unknown publisher warning.
+
+Download Pixel Companion only from:
+https://github.com/ByteLab-1520/PixelCompanion/releases
+
+Verify PixelCompanion-Installer.exe against the accompanying
+PixelCompanion-Installer.exe.sha256 file before running it.
+'@
+Set-Content -LiteralPath $noticePath -Value $notice -Encoding Ascii
 
 $verifiedHash = (Get-FileHash -LiteralPath $releaseInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
 $writtenHash = ((Get-Content -LiteralPath $checksumPath -Raw) -split '\s+')[0]
@@ -70,8 +66,7 @@ if ($verifiedHash -ne $writtenHash) {
     throw 'Release checksum verification failed after writing the output files.'
 }
 
-Write-Output "Release installer: $releaseInstaller"
-Write-Output "Release checksum:  $checksumPath"
-Write-Output "Signature marker:  $markerPath"
-Write-Output "Signer:            $($signature.SignerCertificate.Subject)"
-Write-Output "SHA256:            $hashValue"
+Write-Output "Unsigned release installer: $releaseInstaller"
+Write-Output "Release checksum:           $checksumPath"
+Write-Output "Unsigned notice:            $noticePath"
+Write-Output "SHA256:                     $hashValue"

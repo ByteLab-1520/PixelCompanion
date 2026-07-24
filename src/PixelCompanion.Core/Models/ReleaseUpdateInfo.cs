@@ -6,7 +6,8 @@ public sealed record ReleaseUpdateInfo(
     Uri ReleasePage,
     Uri InstallerDownload,
     Uri? ChecksumDownload,
-    string? AssetSha256);
+    string? AssetSha256,
+    bool SupportsAutomaticInstall);
 
 public sealed record UpdateCheckResult(
     bool IsUpdateAvailable,

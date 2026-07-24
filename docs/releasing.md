@@ -1,43 +1,37 @@
 # Release process
 
-Windows releases are created only from version tags and only after SignPath returns a trusted Authenticode-signed installer. The checksum attached to a GitHub Release is generated from that signed file, not from the unsigned build artifact.
+Windows releases are created from version tags on `main`. Until a trusted code-signing certificate is available, each GitHub Release clearly identifies the installer as unsigned and includes a SHA-256 checksum plus `UNSIGNED_INSTALLER.txt`.
 
-## One-time GitHub configuration
+The desktop app may detect every GitHub Release, but it offers unattended installation only when the Release contains `PixelCompanion-Installer.exe.authenticode.json`. The updater still verifies the downloaded SHA-256 and the installer's trusted Authenticode signature before it can replace an installation. Unsigned releases open the official GitHub Release page for a manual download instead.
 
-After the SignPath open-source application is approved, configure the GitHub repository with:
+## Creating an unsigned release
 
-- Secret `SIGNPATH_API_TOKEN`
-- Variable `SIGNPATH_ORGANIZATION_ID`
-- Variable `SIGNPATH_PROJECT_SLUG`
-- Variable `SIGNPATH_SIGNING_POLICY_SLUG`
+1. Set the same semantic version in `Directory.Build.props` and the installer.
+2. Add bilingual notes at `docs/releases/vMAJOR.MINOR.PATCH.md`.
+3. Merge the tested release changes into `main`.
+4. Create and push a matching tag such as `v0.2.0`.
+5. The `release` workflow builds and smoke-tests the installer, verifies that it is explicitly unsigned, generates its final SHA-256, and creates the GitHub Release.
 
-Link the SignPath GitHub trusted build system and project to this repository. The workflow uses `signpath/github-action-submit-signing-request@v2` and the artifact ID produced by `actions/upload-artifact`.
+The workflow stops without publishing if the tag version does not match, the tag is not contained in `main`, the release notes are missing, installation testing fails, or the artifact has an unexpected signature state.
 
-## Creating a release
-
-1. Ensure `Directory.Build.props`, the installer script, and the Inno Setup fallback all contain the intended semantic version.
-2. Merge the tested release changes into `main`.
-3. Create and push a matching tag such as `v0.2.0`.
-4. The `release` workflow builds the installer, submits it to SignPath, verifies the returned signature, regenerates SHA-256, and creates the GitHub Release.
-
-The workflow stops without publishing if the version does not match, SignPath configuration is missing, signing fails, the returned signature is untrusted, or the checksum cannot be verified.
-
-## Local packaging
-
-Build an unsigned installer from the repository root:
+Build and prepare the same files locally:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.0
+powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.2.0
+powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.2.0
 ```
 
-The build checksum ends in `.unsigned.sha256` and must not be attached to a public Release. After obtaining a signed installer, finalize it with:
+The publishable files are written to `artifacts/windows/release/`.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Finalize-WindowsRelease.ps1 `
-  -SignedInstallerPath C:\path\to\PixelCompanion-Installer.exe `
-  -Version 0.2.0
-```
+## Future signed releases
 
-The final signed installer and post-signing checksum are written to `artifacts/windows/release/`.
+Keep using `scripts/Finalize-WindowsRelease.ps1` after a trusted Authenticode signing service returns the signed installer. It rejects missing or untrusted signatures and creates a checksum from the final signed bytes.
 
-The regular Windows CI job also installs the unsigned build into an isolated directory, verifies the versions of all three executables, and uninstalls it with `scripts/Test-WindowsInstaller.ps1`.
+A signed release must attach all three files:
+
+- `PixelCompanion-Installer.exe`
+- `PixelCompanion-Installer.exe.sha256`
+- `PixelCompanion-Installer.exe.authenticode.json`
+
+The marker file enables the automatic-install button; it does not bypass the updater's own checksum and Authenticode verification.

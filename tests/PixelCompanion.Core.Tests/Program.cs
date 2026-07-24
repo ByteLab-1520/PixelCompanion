@@ -129,6 +129,11 @@ static async Task TestReleaseUpdate()
               "name": "PixelCompanion-Installer.exe",
               "browser_download_url": "https://example.test/PixelCompanion-Installer.exe",
               "digest": "sha256:{{hash}}"
+            },
+            {
+              "name": "PixelCompanion-Installer.exe.authenticode.json",
+              "browser_download_url": "https://example.test/PixelCompanion-Installer.exe.authenticode.json",
+              "digest": null
             }
           ]
         }
@@ -138,6 +143,15 @@ static async Task TestReleaseUpdate()
     var release = result.Release;
     Assert(result.IsUpdateAvailable && release?.Version == new Version(0, 2, 0), "new version was not detected");
     Assert(release?.AssetSha256 == hash, "asset digest was not normalized");
+    Assert(release?.SupportsAutomaticInstall == true, "signed release marker was not detected");
+
+    var unsignedJson = json.Replace(
+        "PixelCompanion-Installer.exe.authenticode.json",
+        "UNSIGNED_INSTALLER.txt",
+        StringComparison.Ordinal);
+    using var unsignedClient = new HttpClient(new StubHttpHandler(unsignedJson));
+    var unsignedResult = await new GitHubReleaseUpdateService(unsignedClient).CheckAsync(new Version(0, 1, 0));
+    Assert(unsignedResult.Release?.SupportsAutomaticInstall == false, "unsigned release enabled automatic install");
 }
 
 static async Task TestLocaleFiles()

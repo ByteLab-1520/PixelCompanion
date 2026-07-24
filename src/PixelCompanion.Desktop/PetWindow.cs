@@ -150,9 +150,14 @@ public sealed class PetWindow : Window
         menu.Items.Add(speed);
         menu.Items.Add(language);
         menu.Items.Add(Item("menu.advancedSettings", OpenAdvancedSettings));
-        menu.Items.Add(_availableUpdate is null
-            ? Item("menu.checkUpdates", ManualCheckForUpdates)
-            : RawItem(string.Format(_localization.Get("menu.installUpdate"), _availableUpdate.TagName), StartUpdate));
+        menu.Items.Add(_availableUpdate switch
+        {
+            null => Item("menu.checkUpdates", ManualCheckForUpdates),
+            { SupportsAutomaticInstall: true } release =>
+                RawItem(string.Format(_localization.Get("menu.installUpdate"), release.TagName), StartUpdate),
+            { } release =>
+                RawItem(string.Format(_localization.Get("menu.viewUpdate"), release.TagName), OpenUpdatePage)
+        });
         menu.Items.Add(Item("menu.hide", Hide));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item("menu.exit", () => _lifetime.Shutdown()));
@@ -442,7 +447,11 @@ public sealed class PetWindow : Window
                 _availableUpdate = result.Release;
                 ContextMenu = BuildContextMenu();
                 if (showResult)
-                    ShowBubble(string.Format(_localization.Get("update.available"), result.Release.TagName));
+                    ShowBubble(string.Format(
+                        _localization.Get(result.Release.SupportsAutomaticInstall
+                            ? "update.available"
+                            : "update.availableManual"),
+                        result.Release.TagName));
             }
             else if (showResult)
             {
@@ -463,9 +472,25 @@ public sealed class PetWindow : Window
 
     private async void ManualCheckForUpdates() => await CheckForUpdatesAsync(showResult: true);
 
-    private async void StartUpdate()
+    private void OpenUpdatePage()
     {
         if (_availableUpdate is null) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(_availableUpdate.ReleasePage.AbsoluteUri)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            ShowBubble(_localization.Get("update.failed"));
+        }
+    }
+
+    private async void StartUpdate()
+    {
+        if (_availableUpdate is not { SupportsAutomaticInstall: true }) return;
         var installedUpdater = Path.Combine(AppContext.BaseDirectory, "PixelCompanion.Updater.exe");
         if (!File.Exists(installedUpdater))
         {
