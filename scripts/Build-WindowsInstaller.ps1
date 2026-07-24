@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.1.0',
+    [string] $Version = '0.2.0',
     [ValidateSet('win-x64')]
     [string] $RuntimeIdentifier = 'win-x64',
     [ValidateSet('Release', 'Debug')]
@@ -22,10 +22,12 @@ $windowsRoot = Join-Path $repoRoot 'artifacts\windows'
 $publishRoot = Join-Path $windowsRoot 'publish'
 $desktopPublish = Join-Path $publishRoot 'desktop'
 $configPublish = Join-Path $publishRoot 'config'
+$updaterPublish = Join-Path $publishRoot 'updater'
 $stagingRoot = Join-Path $windowsRoot 'staging'
 $installerRoot = Join-Path $windowsRoot 'installer'
 $desktopProject = Join-Path $repoRoot 'src\PixelCompanion.Desktop\PixelCompanion.Desktop.csproj'
 $configProject = Join-Path $repoRoot 'src\PixelCompanion.Config\PixelCompanion.Config.csproj'
+$updaterProject = Join-Path $repoRoot 'src\PixelCompanion.Updater\PixelCompanion.Updater.csproj'
 
 function Reset-BuildDirectory([string] $Path) {
     $resolvedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $Path))
@@ -47,6 +49,8 @@ New-Item -ItemType Directory -Path $installerRoot -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Desktop restore failed.' }
 & $dotnet restore $configProject -r $RuntimeIdentifier
 if ($LASTEXITCODE -ne 0) { throw 'Config restore failed.' }
+& $dotnet restore $updaterProject -r $RuntimeIdentifier
+if ($LASTEXITCODE -ne 0) { throw 'Updater restore failed.' }
 
 $commonPublishArgs = @(
     '-c', $Configuration,
@@ -69,13 +73,18 @@ if ($LASTEXITCODE -ne 0) { throw 'Desktop publish failed.' }
 & $dotnet publish $configProject @commonPublishArgs -o $configPublish
 if ($LASTEXITCODE -ne 0) { throw 'Config publish failed.' }
 
+& $dotnet publish $updaterProject @commonPublishArgs -o $updaterPublish
+if ($LASTEXITCODE -ne 0) { throw 'Updater publish failed.' }
+
 Copy-Item -Path (Join-Path $desktopPublish '*') -Destination $stagingRoot -Recurse -Force
 Copy-Item -Path (Join-Path $configPublish '*') -Destination $stagingRoot -Recurse -Force
+Copy-Item -Path (Join-Path $updaterPublish '*') -Destination $stagingRoot -Recurse -Force
 Get-ChildItem -LiteralPath $stagingRoot -Recurse -File -Filter '*.pdb' | Remove-Item -Force
 
 $requiredFiles = @(
     (Join-Path $stagingRoot 'PixelCompanion.exe'),
     (Join-Path $stagingRoot 'PixelCompanion.Config.exe'),
+    (Join-Path $stagingRoot 'PixelCompanion.Updater.exe'),
     (Join-Path $stagingRoot 'locales\en.json'),
     (Join-Path $stagingRoot 'locales\ko.json'),
     (Join-Path $stagingRoot 'characters\DefaultCat\character.json')
@@ -108,9 +117,17 @@ if (-not (Test-Path -LiteralPath $installer)) {
     throw "Expected installer was not produced: $installer"
 }
 
-$hash = Get-FileHash -LiteralPath $installer -Algorithm SHA256
-$hashLine = "$($hash.Hash.ToLowerInvariant())  $([System.IO.Path]::GetFileName($installer))"
-Set-Content -LiteralPath ($installer + '.sha256') -Value $hashLine -Encoding Ascii
+$releaseInstaller = Join-Path $installerRoot 'PixelCompanion-Installer.exe'
+Copy-Item -LiteralPath $installer -Destination $releaseInstaller -Force
+$releaseChecksum = $releaseInstaller + '.sha256'
+if (Test-Path -LiteralPath $releaseChecksum) {
+    Remove-Item -LiteralPath $releaseChecksum -Force
+}
 
-Write-Output "Installer: $installer"
-Write-Output "SHA256:   $($hash.Hash.ToLowerInvariant())"
+$hash = Get-FileHash -LiteralPath $releaseInstaller -Algorithm SHA256
+$hashLine = "$($hash.Hash.ToLowerInvariant())  $([System.IO.Path]::GetFileName($releaseInstaller))"
+Set-Content -LiteralPath ($releaseInstaller + '.unsigned.sha256') -Value $hashLine -Encoding Ascii
+
+Write-Output "Unsigned installer: $releaseInstaller"
+Write-Output "Build SHA256:       $($hash.Hash.ToLowerInvariant())"
+Write-Output 'Run Finalize-WindowsRelease.ps1 only after the installer has been code-signed.'

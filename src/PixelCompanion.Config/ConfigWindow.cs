@@ -1,8 +1,11 @@
 using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using PixelCompanion.Core.Models;
 using PixelCompanion.Core.Services;
 
@@ -18,8 +21,13 @@ public sealed class ConfigWindow : Window
     private readonly CheckBox _topmost = new() { Content = "Always on top / 항상 위" };
     private readonly CheckBox _sound = new() { Content = "Sound / 소리" };
     private readonly CheckBox _dnd = new() { Content = "Do not disturb / 방해 금지" };
+    private readonly CheckBox _autoCheckUpdates = new() { Content = "Automatically check for updates / 자동으로 업데이트 확인" };
     private readonly TextBlock _status = new();
     private readonly ListBox _validation = new();
+    private readonly Dictionary<CharacterImageSlot, Image> _characterPreviews = [];
+    private readonly Dictionary<CharacterImageSlot, TextBlock> _characterFileNames = [];
+    private readonly Dictionary<CharacterImageSlot, Bitmap> _previewBitmaps = [];
+    private readonly UserCharacterService _characterService;
     private AppSettings _settings = new();
     private bool _dirty;
 
@@ -32,6 +40,7 @@ public sealed class ConfigWindow : Window
         MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         _paths.EnsureCreated();
+        _characterService = new UserCharacterService(_paths, _store);
 
         var header = new TextBlock
         {
@@ -72,6 +81,7 @@ public sealed class ConfigWindow : Window
         _topmost.IsCheckedChanged += (_, _) => _dirty = true;
         _sound.IsCheckedChanged += (_, _) => _dirty = true;
         _dnd.IsCheckedChanged += (_, _) => _dirty = true;
+        _autoCheckUpdates.IsCheckedChanged += (_, _) => _dirty = true;
 
         var panel = FormPanel();
         panel.Children.Add(Label("UI language / UI 언어", _language));
@@ -80,6 +90,7 @@ public sealed class ConfigWindow : Window
         panel.Children.Add(_topmost);
         panel.Children.Add(_sound);
         panel.Children.Add(_dnd);
+        panel.Children.Add(_autoCheckUpdates);
         return new ScrollViewer { Content = panel };
     }
 
@@ -87,16 +98,158 @@ public sealed class ConfigWindow : Window
     {
         var info = new TextBlock
         {
-            Text = "Character packs are stored in the shared user-data folder. Required animations are validated; optional animations safely fall back to Idle.\n\n캐릭터 팩은 공용 사용자 데이터 폴더에 저장됩니다. 필수 애니메이션은 검사하며 선택 애니메이션은 Idle로 안전하게 대체됩니다.",
+            Text = "Drop an image onto a slot or click Choose. PNG, JPG, JPEG, and GIF files up to 20 MB are supported. GIF uses its first frame. Missing walking images fall back to Default.\n\n이미지를 각 칸에 끌어 놓거나 선택 버튼을 누르세요. 20MB 이하 PNG, JPG, JPEG, GIF를 지원하며 GIF는 첫 프레임을 사용합니다. 빠진 걷기 이미지는 기본 이미지로 대체됩니다.",
             TextWrapping = TextWrapping.Wrap
         };
+        var imageSlots = new WrapPanel { Orientation = Orientation.Horizontal };
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Default, "Default / 기본"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Back, "Back / 뒷모습"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.WalkLeft, "Walk 1 (left) / 걷기 1 (왼발)"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.WalkRight, "Walk 2 (right) / 걷기 2 (오른발)"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.WalkMiddle, "Walk 3 (middle) / 걷기 3 (중간)"));
         var validate = new Button { Content = "Validate bundled character / 기본 캐릭터 검사", HorizontalAlignment = HorizontalAlignment.Left };
         validate.Click += async (_, _) => await ValidateBundledCharacterAsync();
         var panel = FormPanel();
         panel.Children.Add(info);
+        panel.Children.Add(imageSlots);
         panel.Children.Add(validate);
         panel.Children.Add(_validation);
-        return panel;
+        return new ScrollViewer { Content = panel };
+    }
+
+    private Control BuildImageSlot(CharacterImageSlot slot, string title)
+    {
+        var preview = new Image
+        {
+            Width = 112,
+            Height = 112,
+            Stretch = Stretch.Uniform,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        RenderOptions.SetBitmapInterpolationMode(preview, BitmapInterpolationMode.None);
+        var fileName = new TextBlock
+        {
+            Text = "Not set / 미설정",
+            TextAlignment = TextAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            MaxWidth = 160
+        };
+        _characterPreviews[slot] = preview;
+        _characterFileNames[slot] = fileName;
+
+        var choose = new Button { Content = "Choose / 선택" };
+        choose.Click += async (_, _) => await ChooseCharacterImageAsync(slot);
+        var remove = new Button { Content = "Remove / 제거" };
+        remove.Click += async (_, _) =>
+        {
+            await _characterService.RemoveAsync(slot);
+            _dirty = true;
+            await RefreshCharacterImagesAsync();
+        };
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Children = { choose, remove }
+        };
+        var content = new StackPanel
+        {
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock { Text = title, FontWeight = FontWeight.SemiBold, TextAlignment = TextAlignment.Center },
+                preview,
+                fileName,
+                buttons
+            }
+        };
+        var card = new Border
+        {
+            Width = 185,
+            Margin = new Thickness(0, 0, 10, 10),
+            Padding = new Thickness(10),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Gray,
+            CornerRadius = new CornerRadius(6),
+            Child = content
+        };
+        DragDrop.SetAllowDrop(card, true);
+        DragDrop.AddDragOverHandler(card, (_, e) =>
+        {
+            e.DragEffects = e.DataTransfer.Formats.Contains(DataFormat.File)
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
+        });
+        DragDrop.AddDropHandler(card, async (_, e) =>
+        {
+            var file = e.DataTransfer.TryGetFiles()?.FirstOrDefault();
+            if (file is not null)
+                await ImportCharacterImageAsync(slot, file.Path.LocalPath);
+        });
+        return card;
+    }
+
+    private async Task ChooseCharacterImageAsync(CharacterImageSlot slot)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Choose character image / 캐릭터 이미지 선택",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Character images")
+                {
+                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif"],
+                    MimeTypes = ["image/png", "image/jpeg", "image/gif"]
+                }
+            ]
+        });
+        var file = files.FirstOrDefault();
+        if (file is not null)
+            await ImportCharacterImageAsync(slot, file.Path.LocalPath);
+    }
+
+    private async Task ImportCharacterImageAsync(CharacterImageSlot slot, string path)
+    {
+        var result = await _characterService.ImportAsync(slot, path);
+        if (!result.Success)
+        {
+            _validation.ItemsSource = new[] { $"Image import failed / 이미지 가져오기 실패: {result.Error}" };
+            return;
+        }
+
+        _settings = _settings with { ActiveCharacterId = "user-character" };
+        _dirty = true;
+        _validation.ItemsSource = new[] { "Image imported / 이미지를 가져왔습니다." };
+        await RefreshCharacterImagesAsync();
+    }
+
+    private async Task RefreshCharacterImagesAsync()
+    {
+        var profile = await _characterService.LoadAsync();
+        foreach (var slot in Enum.GetValues<CharacterImageSlot>())
+        {
+            if (_previewBitmaps.Remove(slot, out var previous)) previous.Dispose();
+            _characterPreviews[slot].Source = null;
+            var path = _characterService.ResolvePath(profile, slot);
+            _characterFileNames[slot].Text = path is null
+                ? "Not set / 미설정"
+                : Path.GetFileName(path);
+            if (path is null) continue;
+
+            try
+            {
+                var bitmap = new Bitmap(path);
+                _previewBitmaps[slot] = bitmap;
+                _characterPreviews[slot].Source = bitmap;
+            }
+            catch (Exception ex) when (ex is IOException or ArgumentException)
+            {
+                _characterFileNames[slot].Text = "Unreadable image / 읽을 수 없는 이미지";
+            }
+        }
     }
 
     private Control BuildStatusPanel()
@@ -130,7 +283,9 @@ public sealed class ConfigWindow : Window
         _topmost.IsChecked = _settings.AlwaysOnTop;
         _sound.IsChecked = _settings.SoundEnabled;
         _dnd.IsChecked = _settings.DoNotDisturb;
+        _autoCheckUpdates.IsChecked = _settings.AutoCheckUpdates;
         _dirty = false;
+        await RefreshCharacterImagesAsync();
         await RefreshStatusAsync();
     }
 
@@ -143,7 +298,8 @@ public sealed class ConfigWindow : Window
             CharacterScale = (double)(_scale.Value ?? 2),
             AlwaysOnTop = _topmost.IsChecked == true,
             SoundEnabled = _sound.IsChecked == true,
-            DoNotDisturb = _dnd.IsChecked == true
+            DoNotDisturb = _dnd.IsChecked == true,
+            AutoCheckUpdates = _autoCheckUpdates.IsChecked == true
         };
         await _store.SaveAsync(_paths.SettingsFile, _settings);
         _dirty = false;

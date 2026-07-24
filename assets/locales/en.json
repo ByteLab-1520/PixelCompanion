@@ -11,6 +11,9 @@
   "menu.speed": "Movement speed",
   "menu.language": "Language",
   "menu.advancedSettings": "Advanced settings",
+  "menu.checkUpdates": "Check for updates",
+  "menu.installUpdate": "Update to {0}",
+  "menu.viewUpdate": "View update {0} on GitHub",
   "menu.exit": "Exit",
   "speed.verySlow": "Very slow",
   "speed.slow": "Slow",
@@ -21,5 +24,10 @@
   "dialogue.feed": "That was delicious. Thank you!",
   "dialogue.play": "That was fun!",
   "dialogue.sleep": "I'll rest quietly for a while.",
+  "update.available": "Update {0} is ready. Open the menu to install it.",
+  "update.availableManual": "Update {0} is available. Open GitHub to install it manually.",
+  "update.current": "You're using the latest version.",
+  "update.failed": "I couldn't check or install the update.",
+  "update.updaterMissing": "The updater is missing. Please reinstall Pixel Companion.",
   "error.settings": "Settings could not be loaded. Safe defaults are being used."
 }

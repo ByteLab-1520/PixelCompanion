@@ -3,9 +3,9 @@
     <Project Path="src/PixelCompanion.Core/PixelCompanion.Core.csproj" />
     <Project Path="src/PixelCompanion.Desktop/PixelCompanion.Desktop.csproj" />
     <Project Path="src/PixelCompanion.Config/PixelCompanion.Config.csproj" />
+    <Project Path="src/PixelCompanion.Updater/PixelCompanion.Updater.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/PixelCompanion.Core.Tests/PixelCompanion.Core.Tests.csproj" />
   </Folder>
 </Solution>
-

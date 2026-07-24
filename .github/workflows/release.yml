@@ -1,0 +1,91 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Validate release tag
+        id: version
+        shell: powershell
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Release tag must use vMAJOR.MINOR.PATCH: ${{ github.ref_name }}"
+          }
+
+          [xml] $props = Get-Content -LiteralPath 'Directory.Build.props'
+          $projectVersion = [string] $props.Project.PropertyGroup.Version
+          if ($projectVersion -ne $version) {
+            throw "Tag version '$version' does not match project version '$projectVersion'."
+          }
+
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Release tags must point to a commit contained in origin/main.'
+          }
+
+          $notes = "docs/releases/v$version.md"
+          if (-not (Test-Path -LiteralPath $notes -PathType Leaf)) {
+            throw "Release notes were not found: $notes"
+          }
+
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "notes=$notes" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Build Windows installer
+        shell: powershell
+        run: .\scripts\Build-WindowsInstaller.ps1 -Version '${{ steps.version.outputs.version }}'
+
+      - name: Smoke-test installer
+        shell: powershell
+        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version '${{ steps.version.outputs.version }}'
+
+      - name: Prepare unsigned release files
+        shell: powershell
+        run: |
+          .\scripts\Prepare-UnsignedWindowsRelease.ps1 `
+            -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe `
+            -Version '${{ steps.version.outputs.version }}'
+
+      - name: Upload verified release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PixelCompanion-Windows-Installer-${{ github.ref_name }}
+          path: |
+            artifacts/windows/release/PixelCompanion-Installer.exe
+            artifacts/windows/release/PixelCompanion-Installer.exe.sha256
+            artifacts/windows/release/UNSIGNED_INSTALLER.txt
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create '${{ github.ref_name }}' `
+            'artifacts/windows/release/PixelCompanion-Installer.exe' `
+            'artifacts/windows/release/PixelCompanion-Installer.exe.sha256' `
+            'artifacts/windows/release/UNSIGNED_INSTALLER.txt' `
+            --verify-tag `
+            --title 'Pixel Companion ${{ github.ref_name }}' `
+            --notes-file '${{ steps.version.outputs.notes }}'

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -20,10 +21,13 @@ public sealed class PetWindow : Window
     private readonly LocalizationService _localization;
     private readonly PetStateService _petStateService = new();
     private readonly DialogueSelector _dialogues = new();
+    private readonly UserCharacterService _characterService;
     private readonly DispatcherTimer _movementTimer;
     private readonly DispatcherTimer _animationTimer;
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly Image _character;
+    private readonly Bitmap _bundledCharacter;
+    private readonly Dictionary<CharacterImageSlot, Bitmap> _characterBitmaps = [];
     private readonly Border _bubble;
     private readonly TextBlock _bubbleText;
     private AppSettings _settings;
@@ -36,6 +40,12 @@ public sealed class PetWindow : Window
     private long _lastMovementMs;
     private long _nextDecisionMs;
     private bool _bob;
+    private int _animationFrame;
+    private int _profilePollTicks;
+    private DateTime _lastProfileWriteUtc;
+    private bool _loadingCharacterImages;
+    private ReleaseUpdateInfo? _availableUpdate;
+    private bool _checkingForUpdates;
 
     public bool BehaviorPaused => _settings.BehaviorPaused;
 
@@ -48,6 +58,7 @@ public sealed class PetWindow : Window
         _localization = localization;
         _settings = settings;
         _petState = petState;
+        _characterService = new UserCharacterService(paths, store);
 
         Width = Height = 210;
         MinWidth = MinHeight = 128;
@@ -60,9 +71,10 @@ public sealed class PetWindow : Window
         Opacity = settings.Opacity;
         Title = localization.Get("app.name");
 
+        _bundledCharacter = new Bitmap(AssetLoader.Open(new Uri("avares://PixelCompanion/Assets/default-cat.png")));
         _character = new Image
         {
-            Source = new Bitmap(AssetLoader.Open(new Uri("avares://PixelCompanion/Assets/default-cat.png"))),
+            Source = _bundledCharacter,
             Width = 176,
             Height = 176,
             Stretch = Stretch.Uniform,
@@ -94,7 +106,12 @@ public sealed class PetWindow : Window
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
-        Opened += (_, _) => PlaceInitially();
+        Opened += async (_, _) =>
+        {
+            PlaceInitially();
+            await LoadCharacterImagesAsync();
+            await CheckForUpdatesAsync(showResult: false);
+        };
         Closing += async (_, _) => await PersistAsync();
 
         _movementTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
@@ -133,6 +150,14 @@ public sealed class PetWindow : Window
         menu.Items.Add(speed);
         menu.Items.Add(language);
         menu.Items.Add(Item("menu.advancedSettings", OpenAdvancedSettings));
+        menu.Items.Add(_availableUpdate switch
+        {
+            null => Item("menu.checkUpdates", ManualCheckForUpdates),
+            { SupportsAutomaticInstall: true } release =>
+                RawItem(string.Format(_localization.Get("menu.installUpdate"), release.TagName), StartUpdate),
+            { } release =>
+                RawItem(string.Format(_localization.Get("menu.viewUpdate"), release.TagName), OpenUpdatePage)
+        });
         menu.Items.Add(Item("menu.hide", Hide));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item("menu.exit", () => _lifetime.Shutdown()));
@@ -157,6 +182,7 @@ public sealed class PetWindow : Window
         _dragPointerStart = this.PointToScreen(point.Position);
         _dragWindowStart = Position;
         e.Pointer.Capture(this);
+        SetCharacterFrame(CharacterImageSlot.Default);
         _character.RenderTransform = new RotateTransform(6);
         e.Handled = true;
     }
@@ -231,8 +257,79 @@ public sealed class PetWindow : Window
     private void UpdateAnimation()
     {
         if (_dragging) return;
+        if (++_profilePollTicks >= 4)
+        {
+            _profilePollTicks = 0;
+            var updatedAt = File.Exists(_paths.UserCharacterProfileFile)
+                ? File.GetLastWriteTimeUtc(_paths.UserCharacterProfileFile)
+                : DateTime.MinValue;
+            if (updatedAt != _lastProfileWriteUtc)
+                _ = LoadCharacterImagesAsync();
+        }
+
         _bob = !_bob;
         _character.Margin = new Thickness(0, 0, 0, _walking && _bob ? 4 : 0);
+        if (!_walking)
+        {
+            SetCharacterFrame(CharacterImageSlot.Default);
+            return;
+        }
+
+        var sequence = new[]
+        {
+            CharacterImageSlot.WalkLeft,
+            CharacterImageSlot.WalkMiddle,
+            CharacterImageSlot.WalkRight,
+            CharacterImageSlot.WalkMiddle
+        };
+        SetCharacterFrame(sequence[_animationFrame++ % sequence.Length]);
+    }
+
+    private async Task LoadCharacterImagesAsync()
+    {
+        if (_loadingCharacterImages) return;
+        _loadingCharacterImages = true;
+        try
+        {
+            var profile = await _characterService.LoadAsync();
+            var replacements = new Dictionary<CharacterImageSlot, Bitmap>();
+            foreach (var slot in Enum.GetValues<CharacterImageSlot>())
+            {
+                var path = _characterService.ResolvePath(profile, slot);
+                if (path is null) continue;
+                try { replacements[slot] = new Bitmap(path); }
+                catch (Exception ex) when (ex is IOException or ArgumentException) { }
+            }
+
+            _character.Source = _bundledCharacter;
+            foreach (var bitmap in _characterBitmaps.Values) bitmap.Dispose();
+            _characterBitmaps.Clear();
+            foreach (var pair in replacements) _characterBitmaps[pair.Key] = pair.Value;
+            _lastProfileWriteUtc = File.Exists(_paths.UserCharacterProfileFile)
+                ? File.GetLastWriteTimeUtc(_paths.UserCharacterProfileFile)
+                : DateTime.MinValue;
+            SetCharacterFrame(CharacterImageSlot.Default);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            // Keep the currently loaded images if the editor is saving at this exact moment.
+        }
+        finally
+        {
+            _loadingCharacterImages = false;
+        }
+    }
+
+    private void SetCharacterFrame(CharacterImageSlot slot)
+    {
+        if (_characterBitmaps.TryGetValue(slot, out var selected) ||
+            _characterBitmaps.TryGetValue(CharacterImageSlot.Default, out selected))
+        {
+            _character.Source = selected;
+            return;
+        }
+
+        _character.Source = _bundledCharacter;
     }
 
     private void ChooseTarget()
@@ -323,6 +420,108 @@ public sealed class PetWindow : Window
         var name = OperatingSystem.IsWindows() ? "PixelCompanion.Config.exe" : "PixelCompanion.Config";
         var path = Path.Combine(AppContext.BaseDirectory, name);
         if (File.Exists(path)) Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+    }
+
+    private async Task CheckForUpdatesAsync(bool showResult)
+    {
+        if (_checkingForUpdates) return;
+        if (!showResult && !_settings.AutoCheckUpdates) return;
+        _checkingForUpdates = true;
+        try
+        {
+            var updateState = await _store.LoadOrCreateAsync(_paths.UpdateStateFile, () => new UpdateState());
+            if (!showResult && updateState.LastCheckedAtUtc is { } lastChecked &&
+                DateTimeOffset.UtcNow - lastChecked < TimeSpan.FromDays(1))
+                return;
+
+            var currentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 1, 0);
+            var result = await new GitHubReleaseUpdateService().CheckAsync(currentVersion);
+            await _store.SaveAsync(_paths.UpdateStateFile, updateState with
+            {
+                LastCheckedAtUtc = DateTimeOffset.UtcNow,
+                LatestTag = result.Release?.TagName
+            });
+
+            if (result.IsUpdateAvailable && result.Release is not null)
+            {
+                _availableUpdate = result.Release;
+                ContextMenu = BuildContextMenu();
+                if (showResult)
+                    ShowBubble(string.Format(
+                        _localization.Get(result.Release.SupportsAutomaticInstall
+                            ? "update.available"
+                            : "update.availableManual"),
+                        result.Release.TagName));
+            }
+            else if (showResult)
+            {
+                ShowBubble(result.Error is null
+                    ? _localization.Get("update.current")
+                    : _localization.Get("update.failed"));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            if (showResult) ShowBubble(_localization.Get("update.failed"));
+        }
+        finally
+        {
+            _checkingForUpdates = false;
+        }
+    }
+
+    private async void ManualCheckForUpdates() => await CheckForUpdatesAsync(showResult: true);
+
+    private void OpenUpdatePage()
+    {
+        if (_availableUpdate is null) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(_availableUpdate.ReleasePage.AbsoluteUri)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            ShowBubble(_localization.Get("update.failed"));
+        }
+    }
+
+    private async void StartUpdate()
+    {
+        if (_availableUpdate is not { SupportsAutomaticInstall: true }) return;
+        var installedUpdater = Path.Combine(AppContext.BaseDirectory, "PixelCompanion.Updater.exe");
+        if (!File.Exists(installedUpdater))
+        {
+            ShowBubble(_localization.Get("update.updaterMissing"));
+            return;
+        }
+
+        try
+        {
+            var runnerDirectory = Path.Combine(_paths.Updates, "runner");
+            Directory.CreateDirectory(runnerDirectory);
+            var runner = Path.Combine(runnerDirectory, "PixelCompanion.Updater.exe");
+            File.Copy(installedUpdater, runner, true);
+            var currentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 1, 0);
+            var startInfo = new ProcessStartInfo(runner) { UseShellExecute = true };
+            startInfo.ArgumentList.Add("--current-pid");
+            startInfo.ArgumentList.Add(Environment.ProcessId.ToString());
+            startInfo.ArgumentList.Add("--install-dir");
+            startInfo.ArgumentList.Add(AppContext.BaseDirectory);
+            startInfo.ArgumentList.Add("--current-version");
+            startInfo.ArgumentList.Add(currentVersion.ToString(3));
+            startInfo.ArgumentList.Add("--data-dir");
+            startInfo.ArgumentList.Add(_paths.Root);
+            Process.Start(startInfo);
+            await PersistAsync();
+            _lifetime.Shutdown();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            ShowBubble(_localization.Get("update.failed"));
+        }
     }
 
     private Task SaveSettingsAsync() => _store.SaveAsync(_paths.SettingsFile, _settings);
