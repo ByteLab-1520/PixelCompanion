@@ -18,6 +18,10 @@
 
 [한국어](README.md) | [English](README.en.md)
 
+<br>
+
+<img src="docs/media/pixel-companion-hero.png" alt="Pixel Companion v0.2.0 대표 이미지" width="100%">
+
 </div>
 
 ---
@@ -29,6 +33,10 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 마우스를 빼앗거나 창을 강제로 움직이지 않습니다. 화면 한가운데를 오래 가리지도 않습니다. 사용자가 집중하고 있을 때는 조용히 머물고, 잠깐 쉬는 순간에는 가벼운 반응으로 존재감을 보여 주는 방향을 목표로 합니다.
 
 생성형 AI나 온라인 AI 서비스는 사용하지 않습니다. 캐릭터의 행동은 상태, 조건, 확률, 쿨다운과 대사 데이터를 조합해 만듭니다. 핵심 기능은 인터넷 연결 없이 작동하며, 사용자 데이터도 컴퓨터 안에 보관합니다.
+
+<p align="center">
+  <img src="docs/media/desktop-pet-walk.gif" alt="바탕화면을 걷는 Pixel Companion" width="720">
+</p>
 
 | | |
 |---|---|
@@ -65,6 +73,8 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 ### 이미지로 캐릭터 만들기
 
 고급 설정의 캐릭터 화면에서 이미지를 칸 위로 끌어 놓거나 직접 선택할 수 있습니다.
+
+![다섯 개의 이미지 슬롯이 있는 Pixel Companion 캐릭터 설정 화면](docs/media/character-settings.png)
 
 | 이미지 칸 | 쓰임새 |
 |---|---|

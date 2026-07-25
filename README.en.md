@@ -2,9 +2,15 @@
 
 [한국어](README.md) | [English](README.en.md)
 
+![Pixel Companion v0.2.0 hero](docs/media/pixel-companion-hero.png)
+
 Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Windows and macOS. It creates lifelike behavior without generative AI or external AI services by using state machines, conditions, probabilities, cooldowns, and localized dialogue data.
 
 > A Windows 10/11 x64 installer is currently provided first. A distributable macOS package is planned for a later phase.
+
+<p align="center">
+  <img src="docs/media/desktop-pet-walk.gif" alt="Pixel Companion walking across the desktop" width="720">
+</p>
 
 ## Current features
 
@@ -19,6 +25,12 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Character-pack validation and safe fallbacks when platform services are unavailable
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
+
+## Custom character images
+
+Drop PNG, JPG, JPEG, or GIF files into five dedicated slots for the default pose, back view, and three walking frames. Missing walking images safely fall back to the default pose.
+
+![Pixel Companion character settings with five image slots](docs/media/character-settings.png)
 
 ## Install on Windows
 
