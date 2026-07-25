@@ -2,7 +2,7 @@
 
 [한국어](README.md) | [English](README.en.md)
 
-![Pixel Companion v0.2.0 hero](docs/media/pixel-companion-hero.png)
+![Pixel Companion v0.2.1 hero](docs/media/pixel-companion-hero.png)
 
 Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Windows and macOS. It creates lifelike behavior without generative AI or external AI services by using state machines, conditions, probabilities, cooldowns, and localized dialogue data.
 
@@ -25,6 +25,13 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Character-pack validation and safe fallbacks when platform services are unavailable
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
+
+## What's new in v0.2.1
+
+- Aligns the bilingual Choose and Remove controls as equal-width vertical buttons.
+- Prevents long Korean and English button labels from overlapping neighboring cards.
+- Adds a real character-settings capture, a README hero, and an animated walking preview.
+- Revalidates Windows installation, executable versions, and uninstallation for the patch release.
 
 ## Custom character images
 
@@ -70,7 +77,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1
 
 The single installer executable is written to `artifacts/windows/installer/`. See the [Windows packaging guide](packaging/windows/README.md) for details.
 
-Public releases are built from version tags and include a final SHA-256 checksum. v0.2.0 is explicitly distributed as an unsigned installer, so the app opens its official GitHub Release page instead of installing it automatically. See the [release process](docs/releasing.md) for the current unsigned flow and the future signed-release path.
+Public releases are built from version tags and include a final SHA-256 checksum. v0.2.1 is explicitly distributed as an unsigned installer, so the app opens its official GitHub Release page instead of installing it automatically. See the [release process](docs/releasing.md) for the current unsigned flow and the future signed-release path.
 
 ## User data
 

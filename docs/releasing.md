@@ -9,7 +9,7 @@ The desktop app may detect every GitHub Release, but it offers unattended instal
 1. Set the same semantic version in `Directory.Build.props` and the installer.
 2. Add bilingual notes at `docs/releases/vMAJOR.MINOR.PATCH.md`.
 3. Merge the tested release changes into `main`.
-4. Create and push a matching tag such as `v0.2.0`.
+4. Create and push a matching tag such as `v0.2.1`.
 5. The `release` workflow builds and smoke-tests the installer, verifies that it is explicitly unsigned, generates its final SHA-256, and creates the GitHub Release.
 
 The workflow stops without publishing if the tag version does not match, the tag is not contained in `main`, the release notes are missing, installation testing fails, or the artifact has an unexpected signature state.
@@ -17,9 +17,9 @@ The workflow stops without publishing if the tag version does not match, the tag
 Build and prepare the same files locally:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.0
-powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.2.0
-powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.2.0
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.1
+powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.2.1
+powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.2.1
 ```
 
 The publishable files are written to `artifacts/windows/release/`.

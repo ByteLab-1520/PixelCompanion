@@ -9,7 +9,7 @@
 
 **작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
 
-[![Version](https://img.shields.io/badge/version-0.2.0-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.2.1-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
@@ -20,7 +20,7 @@
 
 <br>
 
-<img src="docs/media/pixel-companion-hero.png" alt="Pixel Companion v0.2.0 대표 이미지" width="100%">
+<img src="docs/media/pixel-companion-hero.png" alt="Pixel Companion v0.2.1 대표 이미지" width="100%">
 
 </div>
 
@@ -63,6 +63,15 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 - 한국어 번역이 없으면 영어를, 영어도 없으면 번역 키를 표시해 프로그램이 멈추지 않게 합니다.
 
 아직 모든 계획이 완성된 것은 아닙니다. 타이머, 미디어 반응, 배터리 반응과 세밀한 캐릭터 제작 도구는 아래 로드맵에 따라 차례로 추가할 예정입니다.
+
+---
+
+## ░░ v0.2.1에서 다듬은 점
+
+- 캐릭터 이미지 카드의 `선택`과 `제거` 버튼을 같은 크기로 맞추고 세로로 정렬했습니다.
+- 긴 한국어·영어 버튼 문구가 이웃 카드와 겹치지 않도록 수정했습니다.
+- 실제 캐릭터 설정 화면, 대표 이미지와 걷기 GIF를 README에 추가했습니다.
+- Windows 설치 파일의 설치·버전 확인·제거 검사를 패치 버전에 맞춰 다시 수행합니다.
 
 ---
 
@@ -185,7 +194,7 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.0
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.1
 ```
 
 서명 전 설치 파일은 다음 폴더에 만들어집니다.

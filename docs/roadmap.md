@@ -7,11 +7,11 @@
 - Separate advanced settings executable with shared storage.
 - Version 0.2 foundation: simple image-slot character editing, runtime walking frames, secure GitHub update checks, and a separate Windows updater.
 
-## Current release target: 0.2.0
+## Current release target: 0.2.1
 
-- Publish the tested Windows installer with a final SHA-256 checksum and an explicit unsigned-build notice.
-- Merge the tested feature branch, create tag `v0.2.0`, and verify the installer release workflow end to end.
-- Version 0.1.0 users install 0.2.0 manually. Unsigned updates continue to open the official Release page rather than installing unattended.
+- Publish the corrected character-image controls and new README showcase media.
+- Create tag `v0.2.1` and verify the installer release workflow end to end.
+- Existing users install 0.2.1 manually. Unsigned updates continue to open the official Release page rather than installing unattended.
 - Revisit trusted code signing after the project establishes broader public adoption and independent trust signals.
 
 ## Next milestones
