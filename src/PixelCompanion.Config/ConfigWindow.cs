@@ -137,9 +137,21 @@ public sealed class ConfigWindow : Window
         _characterPreviews[slot] = preview;
         _characterFileNames[slot] = fileName;
 
-        var choose = new Button { Content = "Choose / 선택" };
+        var choose = new Button
+        {
+            Content = "Choose / 선택",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            MinHeight = 32
+        };
         choose.Click += async (_, _) => await ChooseCharacterImageAsync(slot);
-        var remove = new Button { Content = "Remove / 제거" };
+        var remove = new Button
+        {
+            Content = "Remove / 제거",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            MinHeight = 32
+        };
         remove.Click += async (_, _) =>
         {
             await _characterService.RemoveAsync(slot);
@@ -149,9 +161,9 @@ public sealed class ConfigWindow : Window
 
         var buttons = new StackPanel
         {
-            Orientation = Orientation.Horizontal,
+            Orientation = Orientation.Vertical,
             Spacing = 6,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Children = { choose, remove }
         };
         var content = new StackPanel

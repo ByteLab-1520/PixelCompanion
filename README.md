@@ -9,7 +9,7 @@
 
 **작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
 
-[![Version](https://img.shields.io/badge/version-0.2.0-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.2.1-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
@@ -17,6 +17,10 @@
 [![License](https://img.shields.io/badge/License-MIT-00a86b?style=flat-square)](LICENSE)
 
 [한국어](README.md) | [English](README.en.md)
+
+<br>
+
+<img src="docs/media/pixel-companion-hero.png" alt="Pixel Companion v0.2.1 대표 이미지" width="100%">
 
 </div>
 
@@ -29,6 +33,10 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 마우스를 빼앗거나 창을 강제로 움직이지 않습니다. 화면 한가운데를 오래 가리지도 않습니다. 사용자가 집중하고 있을 때는 조용히 머물고, 잠깐 쉬는 순간에는 가벼운 반응으로 존재감을 보여 주는 방향을 목표로 합니다.
 
 생성형 AI나 온라인 AI 서비스는 사용하지 않습니다. 캐릭터의 행동은 상태, 조건, 확률, 쿨다운과 대사 데이터를 조합해 만듭니다. 핵심 기능은 인터넷 연결 없이 작동하며, 사용자 데이터도 컴퓨터 안에 보관합니다.
+
+<p align="center">
+  <img src="docs/media/desktop-pet-walk.gif" alt="바탕화면을 걷는 Pixel Companion" width="720">
+</p>
 
 | | |
 |---|---|
@@ -58,6 +66,15 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 
 ---
 
+## ░░ v0.2.1에서 다듬은 점
+
+- 캐릭터 이미지 카드의 `선택`과 `제거` 버튼을 같은 크기로 맞추고 세로로 정렬했습니다.
+- 긴 한국어·영어 버튼 문구가 이웃 카드와 겹치지 않도록 수정했습니다.
+- 실제 캐릭터 설정 화면, 대표 이미지와 걷기 GIF를 README에 추가했습니다.
+- Windows 설치 파일의 설치·버전 확인·제거 검사를 패치 버전에 맞춰 다시 수행합니다.
+
+---
+
 ## ░░ v0.2.0에서 달라지는 점
 
 `v0.2.0`은 “내 캐릭터를 쉽게 넣는 방법”과 “안전하게 다음 버전으로 넘어가는 방법”에 초점을 맞췄습니다.
@@ -65,6 +82,8 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 ### 이미지로 캐릭터 만들기
 
 고급 설정의 캐릭터 화면에서 이미지를 칸 위로 끌어 놓거나 직접 선택할 수 있습니다.
+
+![다섯 개의 이미지 슬롯이 있는 Pixel Companion 캐릭터 설정 화면](docs/media/character-settings.png)
 
 | 이미지 칸 | 쓰임새 |
 |---|---|
@@ -175,7 +194,7 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.0
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.1
 ```
 
 서명 전 설치 파일은 다음 폴더에 만들어집니다.
