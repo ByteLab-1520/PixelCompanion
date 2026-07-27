@@ -1,10 +1,68 @@
 {
   "animations": {
-    "idle": { "id": "idle", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 600 }], "loop": true },
-    "walk": { "id": "walk", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 260 }], "loop": true },
-    "drag": { "id": "drag", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 250 }], "loop": true },
-    "fall": { "id": "fall", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 180 }], "loop": true },
-    "land": { "id": "land", "frames": [{ "source": "sprites/default-cat.png", "durationMs": 220 }], "loop": false, "transitionAfter": "idle" }
+    "idle": {
+      "id": "idle",
+      "frames": [
+        { "source": "sprites/default-cat.png", "durationMs": 600 }
+      ],
+      "loop": true
+    },
+    "back": {
+      "id": "back",
+      "frames": [
+        { "source": "sprites/default-cat-back.png", "durationMs": 600 }
+      ],
+      "loop": true
+    },
+    "walk": {
+      "id": "walk",
+      "frames": [
+        { "source": "sprites/default-cat-walk-1.png", "durationMs": 260 },
+        { "source": "sprites/default-cat-walk-2.png", "durationMs": 260 },
+        { "source": "sprites/default-cat-walk-3.png", "durationMs": 260 },
+        { "source": "sprites/default-cat-walk-2.png", "durationMs": 260 }
+      ],
+      "loop": true
+    },
+    "drag": {
+      "id": "drag",
+      "frames": [
+        { "source": "sprites/default-cat.png", "durationMs": 250 }
+      ],
+      "loop": true
+    },
+    "fall": {
+      "id": "fall",
+      "frames": [
+        { "source": "sprites/default-cat.png", "durationMs": 180 }
+      ],
+      "loop": true
+    },
+    "land": {
+      "id": "land",
+      "frames": [
+        { "source": "sprites/default-cat.png", "durationMs": 220 }
+      ],
+      "loop": false,
+      "transitionAfter": "idle"
+    },
+    "eat": {
+      "id": "eat",
+      "frames": [
+        { "source": "sprites/default-cat-eat-1.png", "durationMs": 320 },
+        { "source": "sprites/default-cat-eat-2.png", "durationMs": 320 }
+      ],
+      "loop": true,
+      "transitionAfter": "idle"
+    },
+    "sleep": {
+      "id": "sleep",
+      "frames": [
+        { "source": "sprites/default-cat-sleep-1.png", "durationMs": 700 },
+        { "source": "sprites/default-cat-sleep-2.png", "durationMs": 700 }
+      ],
+      "loop": true,
+      "transitionAfter": "idle"
+    }
   }
 }
-

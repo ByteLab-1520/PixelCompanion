@@ -4,7 +4,9 @@ public sealed class AppPaths
 {
     public AppPaths(string? overrideRoot = null)
     {
-        Root = overrideRoot ?? ResolveUserDataRoot();
+        var environmentRoot = Environment.GetEnvironmentVariable("PIXELCOMPANION_DATA_DIR");
+        Root = overrideRoot ??
+               (!string.IsNullOrWhiteSpace(environmentRoot) ? environmentRoot : ResolveUserDataRoot());
         SettingsFile = Path.Combine(Root, "settings.json");
         RegionsFile = Path.Combine(Root, "regions.json");
         PetStateFile = Path.Combine(Root, "pet-state.json");

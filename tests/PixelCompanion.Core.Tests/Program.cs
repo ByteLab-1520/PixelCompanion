@@ -11,9 +11,13 @@ var tests = new (string Name, Func<Task> Run)[]
     ("atomic JSON store round-trips and recovers", TestAtomicStore),
     ("dialogue selection excludes recent lines", TestDialogueSelection),
     ("bundled character pack is valid", TestBundledPack),
+    ("bundled character action sprites are complete", TestBundledActionSprites),
     ("character images validate contents and persist slots", TestCharacterImages),
+    ("legacy walking slot names remain compatible", TestLegacyCharacterSlots),
     ("GitHub release update metadata is parsed safely", TestReleaseUpdate),
     ("locale JSON files are valid", TestLocaleFiles),
+    ("window and desktop surface placement stays in bounds", TestMovementGeometry),
+    ("v0.2 settings remain compatible with v0.3 defaults", TestSettingsCompatibility),
     ("release versions stay consistent", TestReleaseVersionConsistency)
 };
 
@@ -95,6 +99,32 @@ static async Task TestBundledPack()
     Assert(issues.Count == 0, string.Join("; ", issues.Select(x => x.Message)));
 }
 
+static async Task TestBundledActionSprites()
+{
+    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters", "DefaultCat", "sprites"));
+    var files = new[]
+    {
+        "default-cat.png",
+        "default-cat-back.png",
+        "default-cat-walk-1.png",
+        "default-cat-walk-2.png",
+        "default-cat-walk-3.png",
+        "default-cat-eat-1.png",
+        "default-cat-eat-2.png",
+        "default-cat-sleep-1.png",
+        "default-cat-sleep-2.png"
+    };
+    foreach (var file in files)
+    {
+        var bytes = await File.ReadAllBytesAsync(Path.Combine(root, file));
+        Assert(bytes.Length > 32 && bytes.AsSpan(1, 3).SequenceEqual("PNG"u8), $"{file} is not a PNG");
+        var width = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(16, 4));
+        var height = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(20, 4));
+        Assert(width == 128 && height == 128, $"{file} must use a 128x128 canvas");
+        Assert(bytes[25] is 4 or 6, $"{file} must contain an alpha channel");
+    }
+}
+
 static async Task TestCharacterImages()
 {
     var root = Path.Combine(Path.GetTempPath(), "PixelCompanionTests", Guid.NewGuid().ToString("N"));
@@ -107,14 +137,28 @@ static async Task TestCharacterImages()
         await File.WriteAllTextAsync(fakeImage, "not an image");
         var paths = new AppPaths(Path.Combine(root, "data"));
         var service = new UserCharacterService(paths, new AtomicJsonStore());
-        var imported = await service.ImportAsync(CharacterImageSlot.WalkLeft, validImage);
+        var imported = await service.ImportAsync(CharacterImageSlot.Walk1, validImage);
         Assert(imported.Success, imported.Error ?? "valid image was rejected");
         var profile = await service.LoadAsync();
-        Assert(service.ResolvePath(profile, CharacterImageSlot.WalkLeft) is not null, "slot was not persisted");
+        Assert(service.ResolvePath(profile, CharacterImageSlot.Walk1) is not null, "slot was not persisted");
         var rejected = await service.ImportAsync(CharacterImageSlot.Default, fakeImage);
         Assert(!rejected.Success, "a fake JPG was accepted");
     }
     finally { Directory.Delete(root, true); }
+}
+
+static Task TestLegacyCharacterSlots()
+{
+    const string legacyJson = """{"schemaVersion":1,"images":{"WalkLeft":"images/walk-left.png","WalkRight":"images/walk-right.png","WalkMiddle":"images/walk-middle.png"}}""";
+    var profile = JsonSerializer.Deserialize<UserCharacterProfile>(
+        legacyJson,
+        new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true });
+    Assert(profile is not null, "legacy profile could not be read");
+    Assert(profile!.Images.ContainsKey(CharacterImageSlot.Walk1), "WalkLeft was not migrated to Walk1");
+    Assert(profile.Images.ContainsKey(CharacterImageSlot.Walk2), "WalkRight was not migrated to Walk2");
+    Assert(profile.Images.ContainsKey(CharacterImageSlot.Walk3), "WalkMiddle was not migrated to Walk3");
+    Assert(CharacterImageSlots.All.Count == 9 && CharacterImageSlots.All.Distinct().Count() == 9, "slot catalog contains duplicates");
+    return Task.CompletedTask;
 }
 
 static async Task TestReleaseUpdate()
@@ -157,12 +201,51 @@ static async Task TestReleaseUpdate()
 static async Task TestLocaleFiles()
 {
     var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "locales"));
+    HashSet<string>? englishKeys = null;
     foreach (var name in new[] { "en.json", "ko.json" })
     {
         await using var stream = File.OpenRead(Path.Combine(root, name));
         using var document = await JsonDocument.ParseAsync(stream);
         Assert(document.RootElement.ValueKind == JsonValueKind.Object, $"{name} is not a JSON object");
+        var keys = document.RootElement.EnumerateObject().Select(property => property.Name).ToHashSet(StringComparer.Ordinal);
+        if (name == "en.json") englishKeys = keys;
+        else Assert(englishKeys is not null && keys.SetEquals(englishKeys), $"{name} locale keys do not match en.json");
     }
+}
+
+static Task TestMovementGeometry()
+{
+    var window = new MovementSurface(
+        "window:1",
+        MovementSurfaceKind.WindowTop,
+        new DesktopRect(100, 300, 500, 400));
+    Assert(MovementGeometry.TryPlace(window, 999, 120, 160, out var placement), "valid window was rejected");
+    Assert(placement.X == 480, "placement was not clamped to the window width");
+    Assert(placement.Y == 140, "pet was not placed on the window top");
+
+    var desktop = new MovementSurface(
+        "desktop:1",
+        MovementSurfaceKind.DesktopFloor,
+        new DesktopRect(-1920, 0, 1920, 1040));
+    Assert(MovementGeometry.TryPlace(desktop, -2000, 120, 160, out var desktopPlacement), "valid desktop was rejected");
+    Assert(desktopPlacement.X == -1920 && desktopPlacement.Y == 880, "desktop placement is incorrect");
+    return Task.CompletedTask;
+}
+
+static Task TestSettingsCompatibility()
+{
+    const string oldJson = """{"schemaVersion":1,"language":"ko","movementSpeed":"Slow"}""";
+    var settings = JsonSerializer.Deserialize<AppSettings>(
+        oldJson,
+        new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        });
+    Assert(settings is not null && settings.Language == "ko", "v0.2 settings were not read");
+    Assert(settings!.MovementSurfaceMode == MovementSurfaceMode.DesktopAndWindows, "new surface default was not applied");
+    Assert(settings.FullScreenBehavior == FullScreenBehavior.Hide, "new full-screen default was not applied");
+    return Task.CompletedTask;
 }
 
 static async Task TestReleaseVersionConsistency()
@@ -173,7 +256,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.2.1";
+    const string version = "0.3.0";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

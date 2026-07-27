@@ -13,7 +13,14 @@
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat.png" Link="Assets\default-cat.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-back.png" Link="Assets\default-cat-back.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-walk-1.png" Link="Assets\default-cat-walk-1.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-walk-2.png" Link="Assets\default-cat-walk-2.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-walk-3.png" Link="Assets\default-cat-walk-3.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-eat-1.png" Link="Assets\default-cat-eat-1.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-eat-2.png" Link="Assets\default-cat-eat-2.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-sleep-1.png" Link="Assets\default-cat-sleep-1.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-sleep-2.png" Link="Assets\default-cat-sleep-2.png" />
     <Content Include="..\..\assets\locales\*.json" Link="locales\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
-

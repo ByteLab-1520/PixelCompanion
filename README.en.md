@@ -26,6 +26,18 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
 
+## Default character update in v0.3.0
+
+- Redraws the default cat with a lower body that clearly walks on all four paws.
+- Renames the directional walking slots to the neutral Walk 1, Walk 2, and Walk 3.
+- Adds a matching back view, two eating frames, and two sleeping frames.
+- Plays the new artwork during feeding and sleeping interactions.
+- Keeps user characters made with the legacy walking-slot names compatible.
+
+<p align="center">
+  <img src="assets/characters/DefaultCat/sprites/default-cat-sprite-sheet.png" alt="The redesigned default cat with idle, back, walking, eating, and sleeping actions" width="720">
+</p>
+
 ## What's new in v0.2.1
 
 - Aligns the bilingual Choose and Remove controls as equal-width vertical buttons.
@@ -35,9 +47,9 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 
 ## Custom character images
 
-Drop PNG, JPG, JPEG, or GIF files into five dedicated slots for the default pose, back view, and three walking frames. Missing walking images safely fall back to the default pose.
+Drop PNG, JPG, JPEG, or GIF files into nine dedicated slots for the default pose, back view, three walking frames, two eating frames, and two sleeping frames. Missing action images safely fall back to the default pose.
 
-![Pixel Companion character settings with five image slots](docs/media/character-settings.png)
+![Pixel Companion v0.2.1 character settings layout](docs/media/character-settings.png)
 
 ## Install on Windows
 

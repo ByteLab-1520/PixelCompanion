@@ -3,12 +3,11 @@
   "displayName": { "en": "Mori", "ko": "모리" },
   "description": { "en": "A quiet cat who keeps you company.", "ko": "조용히 곁을 지켜 주는 고양이입니다." },
   "author": "Pixel Companion contributors",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "packFormatVersion": 1,
   "defaultLanguage": "en",
   "supportedLanguages": ["en", "ko"],
-  "canvasWidth": 96,
-  "canvasHeight": 96,
+  "canvasWidth": 128,
+  "canvasHeight": 128,
   "license": "CC0-1.0"
 }
-
