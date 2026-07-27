@@ -2,7 +2,7 @@
 
 [한국어](README.md) | [English](README.en.md)
 
-![Pixel Companion v0.2.1 hero](docs/media/pixel-companion-hero.png)
+![Pixel Companion hero](docs/media/pixel-companion-hero.png)
 
 Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Windows and macOS. It creates lifelike behavior without generative AI or external AI services by using state machines, conditions, probabilities, cooldowns, and localized dialogue data.
 
@@ -25,6 +25,22 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Character-pack validation and safe fallbacks when platform services are unavailable
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
+
+## v0.3.2 for Yaroro
+
+`v0.3.2 for Yaroro` is a special build that bundles Yaroro as the default companion.
+
+- Includes front, back, and three walking frames.
+- Uses two human mealtime frames with rice and side dishes rather than pet food.
+- Includes two calm sleeping frames on a pillow.
+- Keeps every frame on the same transparent 418×418 canvas.
+- User images selected in Character Settings still take priority over the bundled Yaroro frames.
+
+<p align="center">
+  <img src="assets/characters/Yaroro/sprites/yaroro-sprite-sheet.png" alt="Yaroro character set with idle, back, walking, human mealtime, and sleeping actions" width="720">
+</p>
+
+The Yaroro character assets are not covered by the repository's MIT software license. Rights to the original character and reference artwork remain with their respective owner(s); do not extract or redistribute the assets without separate permission.
 
 ## Default character update in v0.3.0
 

@@ -1,0 +1,107 @@
+{
+  "animations": {
+    "idle": {
+      "id": "idle",
+      "frames": [
+        {
+          "source": "sprites/yaroro-default.png",
+          "durationMs": 600
+        }
+      ],
+      "loop": true
+    },
+    "back": {
+      "id": "back",
+      "frames": [
+        {
+          "source": "sprites/yaroro-back.png",
+          "durationMs": 600
+        }
+      ],
+      "loop": true
+    },
+    "walk": {
+      "id": "walk",
+      "frames": [
+        {
+          "source": "sprites/yaroro-walk-1.png",
+          "durationMs": 240
+        },
+        {
+          "source": "sprites/yaroro-walk-2.png",
+          "durationMs": 240
+        },
+        {
+          "source": "sprites/yaroro-walk-3.png",
+          "durationMs": 240
+        },
+        {
+          "source": "sprites/yaroro-walk-2.png",
+          "durationMs": 240
+        }
+      ],
+      "loop": true
+    },
+    "drag": {
+      "id": "drag",
+      "frames": [
+        {
+          "source": "sprites/yaroro-default.png",
+          "durationMs": 250
+        }
+      ],
+      "loop": true
+    },
+    "fall": {
+      "id": "fall",
+      "frames": [
+        {
+          "source": "sprites/yaroro-default.png",
+          "durationMs": 180
+        }
+      ],
+      "loop": true
+    },
+    "land": {
+      "id": "land",
+      "frames": [
+        {
+          "source": "sprites/yaroro-default.png",
+          "durationMs": 220
+        }
+      ],
+      "loop": false,
+      "transitionAfter": "idle"
+    },
+    "eat": {
+      "id": "eat",
+      "frames": [
+        {
+          "source": "sprites/yaroro-eat-1.png",
+          "durationMs": 420
+        },
+        {
+          "source": "sprites/yaroro-eat-2.png",
+          "durationMs": 420
+        }
+      ],
+      "loop": true,
+      "transitionAfter": "idle"
+    },
+    "sleep": {
+      "id": "sleep",
+      "frames": [
+        {
+          "source": "sprites/yaroro-sleep-1.png",
+          "durationMs": 850
+        },
+        {
+          "source": "sprites/yaroro-sleep-2.png",
+          "durationMs": 850
+        }
+      ],
+      "loop": true,
+      "transitionAfter": "idle"
+    }
+  }
+}

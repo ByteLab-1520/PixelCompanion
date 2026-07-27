@@ -91,7 +91,7 @@ static Task TestDialogueSelection()
 
 static async Task TestBundledPack()
 {
-    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters", "DefaultCat"));
+    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters", "Yaroro"));
     var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
     var manifest = JsonSerializer.Deserialize<CharacterManifest>(await File.ReadAllTextAsync(Path.Combine(root, "character.json")), options)!;
     var catalog = JsonSerializer.Deserialize<AnimationCatalog>(await File.ReadAllTextAsync(Path.Combine(root, "animations.json")), options)!;
@@ -101,18 +101,18 @@ static async Task TestBundledPack()
 
 static async Task TestBundledActionSprites()
 {
-    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters", "DefaultCat", "sprites"));
+    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters", "Yaroro", "sprites"));
     var files = new[]
     {
-        "default-cat.png",
-        "default-cat-back.png",
-        "default-cat-walk-1.png",
-        "default-cat-walk-2.png",
-        "default-cat-walk-3.png",
-        "default-cat-eat-1.png",
-        "default-cat-eat-2.png",
-        "default-cat-sleep-1.png",
-        "default-cat-sleep-2.png"
+        "yaroro-default.png",
+        "yaroro-back.png",
+        "yaroro-walk-1.png",
+        "yaroro-walk-2.png",
+        "yaroro-walk-3.png",
+        "yaroro-eat-1.png",
+        "yaroro-eat-2.png",
+        "yaroro-sleep-1.png",
+        "yaroro-sleep-2.png"
     };
     foreach (var file in files)
     {
@@ -120,7 +120,7 @@ static async Task TestBundledActionSprites()
         Assert(bytes.Length > 32 && bytes.AsSpan(1, 3).SequenceEqual("PNG"u8), $"{file} is not a PNG");
         var width = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(16, 4));
         var height = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(20, 4));
-        Assert(width == 128 && height == 128, $"{file} must use a 128x128 canvas");
+        Assert(width == 418 && height == 418, $"{file} must use a 418x418 canvas");
         Assert(bytes[25] is 4 or 6, $"{file} must contain an alpha channel");
     }
 }
@@ -256,7 +256,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.3.0";
+    const string version = "0.3.2";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

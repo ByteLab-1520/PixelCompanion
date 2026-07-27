@@ -449,16 +449,16 @@ public sealed class PetWindow : Window
 
     private static string BundledAssetName(CharacterImageSlot slot) => slot switch
     {
-        CharacterImageSlot.Default => "default-cat.png",
-        CharacterImageSlot.Back => "default-cat-back.png",
-        CharacterImageSlot.Walk1 => "default-cat-walk-1.png",
-        CharacterImageSlot.Walk2 => "default-cat-walk-2.png",
-        CharacterImageSlot.Walk3 => "default-cat-walk-3.png",
-        CharacterImageSlot.Eat1 => "default-cat-eat-1.png",
-        CharacterImageSlot.Eat2 => "default-cat-eat-2.png",
-        CharacterImageSlot.Sleep1 => "default-cat-sleep-1.png",
-        CharacterImageSlot.Sleep2 => "default-cat-sleep-2.png",
-        _ => "default-cat.png"
+        CharacterImageSlot.Default => "yaroro-default.png",
+        CharacterImageSlot.Back => "yaroro-back.png",
+        CharacterImageSlot.Walk1 => "yaroro-walk-1.png",
+        CharacterImageSlot.Walk2 => "yaroro-walk-2.png",
+        CharacterImageSlot.Walk3 => "yaroro-walk-3.png",
+        CharacterImageSlot.Eat1 => "yaroro-eat-1.png",
+        CharacterImageSlot.Eat2 => "yaroro-eat-2.png",
+        CharacterImageSlot.Sleep1 => "yaroro-sleep-1.png",
+        CharacterImageSlot.Sleep2 => "yaroro-sleep-2.png",
+        _ => "yaroro-default.png"
     };
 
     private void StartSpecialAnimation(IReadOnlyList<CharacterImageSlot> frames, int durationMilliseconds)

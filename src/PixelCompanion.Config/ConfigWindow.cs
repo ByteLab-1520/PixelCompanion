@@ -388,7 +388,7 @@ public sealed class ConfigWindow : Window
 
     private static string? FindBundledCharacterRoot()
     {
-        var candidate = Path.Combine(AppContext.BaseDirectory, "characters", "DefaultCat");
+        var candidate = Path.Combine(AppContext.BaseDirectory, "characters", "Yaroro");
         return Directory.Exists(candidate) ? candidate : null;
     }
 

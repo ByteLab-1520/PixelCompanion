@@ -50,7 +50,7 @@ public sealed class App : Application
     {
         _trayIcon = new TrayIcon
         {
-            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://PixelCompanion/Assets/default-cat.png"))),
+            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://PixelCompanion/Assets/yaroro-default.png"))),
             ToolTipText = localization.Get("app.name"),
             Menu = BuildMenu(),
             IsVisible = true

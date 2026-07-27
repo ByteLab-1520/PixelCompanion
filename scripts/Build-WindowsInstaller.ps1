@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.3.0',
+    [string] $Version = '0.3.2',
     [ValidateSet('win-x64')]
     [string] $RuntimeIdentifier = 'win-x64',
     [ValidateSet('Release', 'Debug')]
@@ -87,7 +87,7 @@ $requiredFiles = @(
     (Join-Path $stagingRoot 'PixelCompanion.Updater.exe'),
     (Join-Path $stagingRoot 'locales\en.json'),
     (Join-Path $stagingRoot 'locales\ko.json'),
-    (Join-Path $stagingRoot 'characters\DefaultCat\character.json')
+    (Join-Path $stagingRoot 'characters\Yaroro\character.json')
 )
 foreach ($requiredFile in $requiredFiles) {
     if (-not (Test-Path -LiteralPath $requiredFile)) {

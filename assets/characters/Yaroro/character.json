@@ -1,0 +1,22 @@
+{
+  "id": "yaroro",
+  "displayName": {
+    "en": "Yaroro",
+    "ko": "야로로"
+  },
+  "description": {
+    "en": "The bundled character for the Pixel Companion v0.3.2 Yaroro edition.",
+    "ko": "Pixel Companion v0.3.2 야로로 에디션에 포함된 캐릭터입니다."
+  },
+  "author": "Local custom pack",
+  "version": "1.0.0",
+  "packFormatVersion": 1,
+  "defaultLanguage": "ko",
+  "supportedLanguages": [
+    "ko",
+    "en"
+  ],
+  "canvasWidth": 418,
+  "canvasHeight": 418,
+  "license": "Separate asset rights; not covered by the repository MIT license"
+}

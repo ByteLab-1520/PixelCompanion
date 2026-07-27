@@ -12,15 +12,15 @@
     <ProjectReference Include="..\PixelCompanion.Core\PixelCompanion.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat.png" Link="Assets\default-cat.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-back.png" Link="Assets\default-cat-back.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-walk-1.png" Link="Assets\default-cat-walk-1.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-walk-2.png" Link="Assets\default-cat-walk-2.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-walk-3.png" Link="Assets\default-cat-walk-3.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-eat-1.png" Link="Assets\default-cat-eat-1.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-eat-2.png" Link="Assets\default-cat-eat-2.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-sleep-1.png" Link="Assets\default-cat-sleep-1.png" />
-    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-sleep-2.png" Link="Assets\default-cat-sleep-2.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-default.png" Link="Assets\yaroro-default.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-back.png" Link="Assets\yaroro-back.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-walk-1.png" Link="Assets\yaroro-walk-1.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-walk-2.png" Link="Assets\yaroro-walk-2.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-walk-3.png" Link="Assets\yaroro-walk-3.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-eat-1.png" Link="Assets\yaroro-eat-1.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-eat-2.png" Link="Assets\yaroro-eat-2.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-sleep-1.png" Link="Assets\yaroro-sleep-1.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-sleep-2.png" Link="Assets\yaroro-sleep-2.png" />
     <Content Include="..\..\assets\locales\*.json" Link="locales\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
