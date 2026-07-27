@@ -2,14 +2,14 @@
 
 ```text
 ┌──────────────────────────────────────┐
-│        PIXEL COMPANION  v0.2         │
+│      PIXEL COMPANION  v0.3.2         │
 │       작은 친구, 조용한 동행         │
 └──────────────────────────────────────┘
 ```
 
 **작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
 
-[![Version](https://img.shields.io/badge/version-0.2.1-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.3.2-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
@@ -66,7 +66,25 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 
 ---
 
-## ░░ v0.3.0에서 바뀌는 기본 캐릭터
+## ░░ v0.3.2 for Yaroro
+
+`v0.3.2 for Yaroro`는 야로로를 기본 캐릭터로 만날 수 있는 특별 빌드입니다.
+
+- 기본, 뒷모습과 걷기 1·2·3을 포함합니다.
+- 사람 캐릭터에 맞춰 사료가 아닌 흰쌀밥과 반찬을 먹는 동작 2종을 포함합니다.
+- 베개에 누워 쉬는 잠자기 동작 2종을 포함합니다.
+- 모든 프레임은 같은 `418×418` 투명 캔버스로 맞췄습니다.
+- 캐릭터 설정에서 넣은 사용자 이미지는 이전처럼 야로로 프레임보다 우선합니다.
+
+<p align="center">
+  <img src="assets/characters/Yaroro/sprites/yaroro-sprite-sheet.png" alt="기본, 뒷모습, 걷기, 밥 먹기와 잠자기 동작으로 구성된 야로로 캐릭터 세트" width="720">
+</p>
+
+야로로 캐릭터 자산은 저장소의 MIT 소프트웨어 라이선스에 포함되지 않습니다. 원본 캐릭터와 참고 이미지의 권리는 각 권리자에게 있으며, 별도의 허락 없이 자산을 추출하거나 재배포해서는 안 됩니다.
+
+---
+
+## ░░ v0.3.0에서 바뀐 기본 캐릭터
 
 - 기본 고양이를 몸을 낮추고 네 발로 걷는 모습으로 다시 그렸습니다.
 - 걷기 이름은 왼발·오른발 구분 없이 `걷기 1`, `걷기 2`, `걷기 3`으로 단순하게 정리했습니다.
@@ -208,7 +226,7 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.2.1
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.3.2
 ```
 
 서명 전 설치 파일은 다음 폴더에 만들어집니다.
@@ -231,6 +249,7 @@ artifacts/windows/installer/
 |---|---|---|
 | `v0.2.0` | 캐릭터 이미지와 업데이트 기반 | 이미지 슬롯, 걷기 프레임, Release 확인, 미서명 설치 파일의 안전한 수동 업데이트 |
 | `v0.3.0` | 창 위에서도 조용히 함께하기 | 프로그램 창 위 걷기·추적·안전 복구, 이동 영역 편집기, 다중 모니터·DPI 대응, 클릭 통과, 자동 시작과 트레이 메뉴 개선 |
+| `v0.3.2` | Yaroro 특별 빌드 | 야로로 기본 캐릭터, 걷기 3프레임, 사람의 밥 식사 모션, 잠자기 모션과 별도 자산 권리 고지 |
 | `v0.4.0` | 함께 돌보는 재미 | 상태값 변화, 먹이·청소·쓰다듬기·수면, 타이머와 집중 타이머 |
 | `v0.5.0` | Windows 상황 인식 | 자리 비움·복귀, 전체 화면, 시스템 부하, 배터리·충전, 음악·영상 반응 |
 | `v0.6.0` | 캐릭터 제작 도구 | 스프라이트 시트, 프레임 순서와 FPS, 기준점, 히트박스, 소품과 조건부 대사 |

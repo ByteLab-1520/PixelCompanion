@@ -10,7 +10,7 @@ public sealed record AppSettings
 {
     public int SchemaVersion { get; init; } = 2;
     public string Language { get; init; } = "auto";
-    public string ActiveCharacterId { get; init; } = "default-cat";
+    public string ActiveCharacterId { get; init; } = "yaroro";
     public bool CharacterVisible { get; init; } = true;
     public bool BehaviorPaused { get; init; }
     public bool AlwaysOnTop { get; init; } = true;

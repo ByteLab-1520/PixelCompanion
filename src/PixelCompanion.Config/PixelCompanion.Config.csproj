@@ -12,6 +12,6 @@
     <ProjectReference Include="..\PixelCompanion.Core\PixelCompanion.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\assets\characters\DefaultCat\**\*" Link="characters\DefaultCat\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\assets\characters\Yaroro\**\*" Link="characters\Yaroro\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
