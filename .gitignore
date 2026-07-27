@@ -1,11 +1,13 @@
 bin/
 obj/
 .dotnet/
+.codex-dotnet/
+.codex-dotnet-install.ps1
 .vs/
 .idea/
 *.user
 *.suo
 artifacts/
 UserData/
+tmp/imagegen/
 dotnet-install.ps1
-

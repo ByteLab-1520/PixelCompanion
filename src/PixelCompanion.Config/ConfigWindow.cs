@@ -17,11 +17,20 @@ public sealed class ConfigWindow : Window
     private readonly AtomicJsonStore _store = new();
     private readonly ComboBox _language = new();
     private readonly ComboBox _speed = new();
+    private readonly ComboBox _movementSurface = new();
+    private readonly ComboBox _fullScreenBehavior = new();
     private readonly NumericUpDown _scale = new() { Minimum = 1, Maximum = 6, Increment = 1 };
     private readonly CheckBox _topmost = new() { Content = "Always on top / 항상 위" };
+    private readonly CheckBox _clickThrough = new() { Content = "Click-through (Ctrl+Alt+P to toggle) / 클릭 통과 (Ctrl+Alt+P로 전환)" };
+    private readonly CheckBox _autoStart = new() { Content = "Start at login / 로그인 시 자동 시작" };
+    private readonly CheckBox _includeSystemAreas = new() { Content = "Include taskbar area / 작업 표시줄 영역 포함" };
     private readonly CheckBox _sound = new() { Content = "Sound / 소리" };
     private readonly CheckBox _dnd = new() { Content = "Do not disturb / 방해 금지" };
     private readonly CheckBox _autoCheckUpdates = new() { Content = "Automatically check for updates / 자동으로 업데이트 확인" };
+    private readonly TextBox _excludedProcesses = new()
+    {
+        PlaceholderText = "game.exe, presentation-app / 제외할 프로세스 이름(쉼표로 구분)"
+    };
     private readonly TextBlock _status = new();
     private readonly ListBox _validation = new();
     private readonly Dictionary<CharacterImageSlot, Image> _characterPreviews = [];
@@ -75,19 +84,33 @@ public sealed class ConfigWindow : Window
         _language.Items.Add("English");
         _language.Items.Add("한국어");
         foreach (var value in Enum.GetNames<MovementSpeed>()) _speed.Items.Add(value);
+        foreach (var value in Enum.GetNames<MovementSurfaceMode>()) _movementSurface.Items.Add(value);
+        foreach (var value in Enum.GetNames<FullScreenBehavior>()) _fullScreenBehavior.Items.Add(value);
         _language.SelectionChanged += (_, _) => _dirty = true;
         _speed.SelectionChanged += (_, _) => _dirty = true;
+        _movementSurface.SelectionChanged += (_, _) => _dirty = true;
+        _fullScreenBehavior.SelectionChanged += (_, _) => _dirty = true;
         _scale.ValueChanged += (_, _) => _dirty = true;
         _topmost.IsCheckedChanged += (_, _) => _dirty = true;
+        _clickThrough.IsCheckedChanged += (_, _) => _dirty = true;
+        _autoStart.IsCheckedChanged += (_, _) => _dirty = true;
+        _includeSystemAreas.IsCheckedChanged += (_, _) => _dirty = true;
         _sound.IsCheckedChanged += (_, _) => _dirty = true;
         _dnd.IsCheckedChanged += (_, _) => _dirty = true;
         _autoCheckUpdates.IsCheckedChanged += (_, _) => _dirty = true;
+        _excludedProcesses.TextChanged += (_, _) => _dirty = true;
 
         var panel = FormPanel();
         panel.Children.Add(Label("UI language / UI 언어", _language));
         panel.Children.Add(Label("Movement speed / 이동 속도", _speed));
+        panel.Children.Add(Label("Walking surfaces / 이동 지면", _movementSurface));
+        panel.Children.Add(Label("When full screen / 전체 화면 동작", _fullScreenBehavior));
         panel.Children.Add(Label("Integer scale / 정수 배율", _scale));
+        panel.Children.Add(Label("Excluded window apps / 창 지면 제외 앱", _excludedProcesses));
         panel.Children.Add(_topmost);
+        panel.Children.Add(_clickThrough);
+        panel.Children.Add(_autoStart);
+        panel.Children.Add(_includeSystemAreas);
         panel.Children.Add(_sound);
         panel.Children.Add(_dnd);
         panel.Children.Add(_autoCheckUpdates);
@@ -98,15 +121,19 @@ public sealed class ConfigWindow : Window
     {
         var info = new TextBlock
         {
-            Text = "Drop an image onto a slot or click Choose. PNG, JPG, JPEG, and GIF files up to 20 MB are supported. GIF uses its first frame. Missing walking images fall back to Default.\n\n이미지를 각 칸에 끌어 놓거나 선택 버튼을 누르세요. 20MB 이하 PNG, JPG, JPEG, GIF를 지원하며 GIF는 첫 프레임을 사용합니다. 빠진 걷기 이미지는 기본 이미지로 대체됩니다.",
+            Text = "Drop an image onto a slot or click Choose. PNG, JPG, JPEG, and GIF files up to 20 MB are supported. GIF uses its first frame. Missing walking, eating, or sleeping images fall back to Default.\n\n이미지를 각 칸에 끌어 놓거나 선택 버튼을 누르세요. 20MB 이하 PNG, JPG, JPEG, GIF를 지원하며 GIF는 첫 프레임을 사용합니다. 빠진 걷기·밥 먹기·잠자기 이미지는 기본 이미지로 자연스럽게 대체됩니다.",
             TextWrapping = TextWrapping.Wrap
         };
         var imageSlots = new WrapPanel { Orientation = Orientation.Horizontal };
         imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Default, "Default / 기본"));
         imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Back, "Back / 뒷모습"));
-        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.WalkLeft, "Walk 1 (left) / 걷기 1 (왼발)"));
-        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.WalkRight, "Walk 2 (right) / 걷기 2 (오른발)"));
-        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.WalkMiddle, "Walk 3 (middle) / 걷기 3 (중간)"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Walk1, "Walk 1 / 걷기 1"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Walk2, "Walk 2 / 걷기 2"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Walk3, "Walk 3 / 걷기 3"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Eat1, "Eat 1 / 밥 먹기 1"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Eat2, "Eat 2 / 밥 먹기 2"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Sleep1, "Sleep 1 / 잠자기 1"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Sleep2, "Sleep 2 / 잠자기 2"));
         var validate = new Button { Content = "Validate bundled character / 기본 캐릭터 검사", HorizontalAlignment = HorizontalAlignment.Left };
         validate.Click += async (_, _) => await ValidateBundledCharacterAsync();
         var panel = FormPanel();
@@ -241,7 +268,7 @@ public sealed class ConfigWindow : Window
     private async Task RefreshCharacterImagesAsync()
     {
         var profile = await _characterService.LoadAsync();
-        foreach (var slot in Enum.GetValues<CharacterImageSlot>())
+        foreach (var slot in CharacterImageSlots.All)
         {
             if (_previewBitmaps.Remove(slot, out var previous)) previous.Dispose();
             _characterPreviews[slot].Source = null;
@@ -291,11 +318,17 @@ public sealed class ConfigWindow : Window
         _settings = await _store.LoadOrCreateAsync(_paths.SettingsFile, () => new AppSettings());
         _language.SelectedIndex = _settings.Language switch { "en" => 1, "ko" => 2, _ => 0 };
         _speed.SelectedItem = _settings.MovementSpeed.ToString();
+        _movementSurface.SelectedItem = _settings.MovementSurfaceMode.ToString();
+        _fullScreenBehavior.SelectedItem = _settings.FullScreenBehavior.ToString();
         _scale.Value = (decimal)_settings.CharacterScale;
         _topmost.IsChecked = _settings.AlwaysOnTop;
+        _clickThrough.IsChecked = _settings.ClickThrough;
+        _autoStart.IsChecked = _settings.AutoStart;
+        _includeSystemAreas.IsChecked = _settings.IncludeSystemAreas;
         _sound.IsChecked = _settings.SoundEnabled;
         _dnd.IsChecked = _settings.DoNotDisturb;
         _autoCheckUpdates.IsChecked = _settings.AutoCheckUpdates;
+        _excludedProcesses.Text = string.Join(", ", _settings.ExcludedWindowProcesses);
         _dirty = false;
         await RefreshCharacterImagesAsync();
         await RefreshStatusAsync();
@@ -307,11 +340,24 @@ public sealed class ConfigWindow : Window
         {
             Language = _language.SelectedIndex switch { 1 => "en", 2 => "ko", _ => "auto" },
             MovementSpeed = Enum.TryParse<MovementSpeed>(_speed.SelectedItem?.ToString(), out var speed) ? speed : MovementSpeed.Slow,
+            MovementSurfaceMode = Enum.TryParse<MovementSurfaceMode>(_movementSurface.SelectedItem?.ToString(), out var surface)
+                ? surface
+                : MovementSurfaceMode.DesktopAndWindows,
+            FullScreenBehavior = Enum.TryParse<FullScreenBehavior>(_fullScreenBehavior.SelectedItem?.ToString(), out var fullScreen)
+                ? fullScreen
+                : FullScreenBehavior.Hide,
             CharacterScale = (double)(_scale.Value ?? 2),
             AlwaysOnTop = _topmost.IsChecked == true,
+            ClickThrough = _clickThrough.IsChecked == true,
+            AutoStart = _autoStart.IsChecked == true,
+            IncludeSystemAreas = _includeSystemAreas.IsChecked == true,
             SoundEnabled = _sound.IsChecked == true,
             DoNotDisturb = _dnd.IsChecked == true,
-            AutoCheckUpdates = _autoCheckUpdates.IsChecked == true
+            AutoCheckUpdates = _autoCheckUpdates.IsChecked == true,
+            ExcludedWindowProcesses = (_excludedProcesses.Text ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray()
         };
         await _store.SaveAsync(_paths.SettingsFile, _settings);
         _dirty = false;

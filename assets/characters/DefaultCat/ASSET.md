@@ -1,9 +1,17 @@
 # Default Cat asset
 
-The bundled mascot was generated with the built-in image generation tool, then converted from a flat chroma-key source to an alpha PNG with the local chroma-removal helper. `default-cat.png` is the runtime asset; `default-cat-chroma.png` is retained as its editable source/provenance artifact.
+The bundled mascot is an original CC0-1.0 project asset generated with the built-in image generation tool. The previous upright-looking pose was redrawn as a lower, horizontal, four-paw cat with a consistent nine-frame set:
+
+- default
+- back
+- walk 1, 2, and 3
+- eat 1 and 2
+- sleep 1 and 2
+
+`default-cat-sprite-sheet.png` is the transparent 3×3 source sheet. The individual 128×128 PNG files are the runtime and character-pack assets. A flat chroma-key intermediate was removed locally with the image-generation skill's chroma-removal helper and is not distributed.
 
 Final prompt:
 
-> Create one small original cute pixel-art cat mascot, front three-quarter standing pose, suitable as a desktop pet. The character has a warm cream body, cocoa-brown ear tips and tail tip, teal scarf, simple friendly face, chunky crisp 8-bit/16-bit pixel clusters, and no resemblance to any existing copyrighted character. Use a perfectly flat solid magenta chroma-key background with generous padding. Use crisp hard pixel edges; no cast shadow, contact shadow, text, logo, or watermark.
+> Redraw the same cream-and-brown cat as a coherent 3×3 pixel-art sprite sheet. Keep the recognizable cream fur, cocoa-brown ears, tail, paws and stripes, teal scarf, friendly face and crisp chunky pixels. Make the body lower and more horizontal so it clearly walks on all four paws. Include a neutral pose, back view, three walk frames, two eating frames with a bowl, and two curled sleeping frames. Keep all poses centered, equally scaled and fully separated. Use a removable solid chroma-key background with no labels, grid, shadow, text, logo or watermark.
 
-The character manifest designates this original project asset as CC0-1.0 so it can be redistributed independently from the MIT-licensed application source.
+The character manifest designates these original assets as CC0-1.0 so they can be redistributed independently from the MIT-licensed application source.

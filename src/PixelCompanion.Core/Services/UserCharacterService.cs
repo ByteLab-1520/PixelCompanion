@@ -36,7 +36,7 @@ public sealed class UserCharacterService(AppPaths paths, AtomicJsonStore store)
                 return new(false, Error: "The file contents are not a supported PNG, JPEG, or GIF image.");
 
             paths.EnsureCreated();
-            var destinationName = $"{ToFileStem(slot)}{canonicalExtension}";
+            var destinationName = $"{FileStems(slot)[0]}{canonicalExtension}";
             var destinationPath = Path.Combine(paths.UserCharacterImages, destinationName);
             var temporaryPath = destinationPath + ".tmp";
 
@@ -111,21 +111,26 @@ public sealed class UserCharacterService(AppPaths paths, AtomicJsonStore store)
 
     private void DeleteOtherSlotFormats(CharacterImageSlot slot, string? keepPath)
     {
+        foreach (var stem in FileStems(slot))
         foreach (var extension in AllowedExtensions)
         {
-            var path = Path.Combine(paths.UserCharacterImages, ToFileStem(slot) + extension);
+            var path = Path.Combine(paths.UserCharacterImages, stem + extension);
             if (!string.Equals(path, keepPath, StringComparison.OrdinalIgnoreCase) && File.Exists(path))
                 File.Delete(path);
         }
     }
 
-    private static string ToFileStem(CharacterImageSlot slot) => slot switch
+    private static string[] FileStems(CharacterImageSlot slot) => slot switch
     {
-        CharacterImageSlot.Default => "default",
-        CharacterImageSlot.Back => "back",
-        CharacterImageSlot.WalkLeft => "walk-left",
-        CharacterImageSlot.WalkRight => "walk-right",
-        CharacterImageSlot.WalkMiddle => "walk-middle",
+        CharacterImageSlot.Default => ["default"],
+        CharacterImageSlot.Back => ["back"],
+        CharacterImageSlot.Walk1 => ["walk-1", "walk-left"],
+        CharacterImageSlot.Walk2 => ["walk-2", "walk-right"],
+        CharacterImageSlot.Walk3 => ["walk-3", "walk-middle"],
+        CharacterImageSlot.Eat1 => ["eat-1"],
+        CharacterImageSlot.Eat2 => ["eat-2"],
+        CharacterImageSlot.Sleep1 => ["sleep-1"],
+        CharacterImageSlot.Sleep2 => ["sleep-2"],
         _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null)
     };
 }
