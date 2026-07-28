@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName Condition="'$(ProductEdition)' == 'Standard'">PixelCompanion.Config</AssemblyName>
     <AssemblyName Condition="'$(ProductEdition)' == 'Yaroro'">PixelCompanion.Yaroro.Config</AssemblyName>
+    <ApplicationIcon Condition="'$(ProductEdition)' == 'Yaroro'">..\..\assets\icons\yaroro-icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" />

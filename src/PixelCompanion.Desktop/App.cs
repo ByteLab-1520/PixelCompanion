@@ -51,7 +51,8 @@ public sealed class App : Application
         _trayIcon = new TrayIcon
         {
             Icon = new WindowIcon(AssetLoader.Open(new Uri(
-                $"avares://{ProductEditionInfo.DesktopAssemblyName}/Assets/character-default.png"))),
+                $"avares://{ProductEditionInfo.DesktopAssemblyName}/Assets/" +
+                (ProductEditionInfo.IsYaroro ? "app-icon.png" : "character-default.png")))),
             ToolTipText = ProductEditionInfo.LocalizeDisplayName(localization.Get("app.name")),
             Menu = BuildMenu(),
             IsVisible = true

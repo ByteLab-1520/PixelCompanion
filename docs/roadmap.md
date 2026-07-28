@@ -52,6 +52,12 @@
 - Ignore windows behind the supporting window and windows that do not cross its top edge.
 - Fall back to normal surface recovery only when no unobstructed range can fit the companion.
 
+## 0.4.2 dialogue editor Hot Fix
+
+- Remove the selection-event feedback loop that could freeze the in-app dialogue editor.
+- Keep editing responsive across line selection, text input, numeric options, and language changes.
+- Make the Yaroro installer automatically uninstall the Standard application while preserving Standard user data.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.

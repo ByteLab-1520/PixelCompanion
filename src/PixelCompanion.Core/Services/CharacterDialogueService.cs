@@ -8,12 +8,20 @@ public sealed class CharacterDialogueService(AppPaths paths, AtomicJsonStore sto
     public const int MaximumTextLength = 500;
     public const int MaximumCooldownSeconds = 86_400;
 
-    public Task<CharacterDialogueCatalog> LoadAsync(
+    public async Task<CharacterDialogueCatalog> LoadAsync(
         string characterId,
         string language,
         Func<CharacterDialogueCatalog> defaults,
-        CancellationToken cancellationToken = default) =>
-        store.LoadOrCreateAsync(paths.GetDialogueFile(characterId, language), defaults, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        var catalog = await store.LoadOrCreateAsync(
+            paths.GetDialogueFile(characterId, language),
+            defaults,
+            cancellationToken);
+        if (MigrateYaroroGreeting(catalog))
+            await store.SaveAsync(paths.GetDialogueFile(characterId, language), catalog, cancellationToken);
+        return catalog;
+    }
 
     public async Task SaveAsync(CharacterDialogueCatalog catalog, CancellationToken cancellationToken = default)
     {
@@ -67,7 +75,11 @@ public sealed class CharacterDialogueService(AppPaths paths, AtomicJsonStore sto
             {
                 [DialogueGroupIds.Click] =
                 [
-                    new DialogueLine("click.1", getText("dialogue.click.1")),
+                    new DialogueLine(
+                        "click.1",
+                        IsKoreanYaroro(characterId, language)
+                            ? "안녕? 야로로대장이야"
+                            : getText("dialogue.click.1")),
                     new DialogueLine("click.2", getText("dialogue.click.2"))
                 ],
                 [DialogueGroupIds.Feed] =
@@ -84,6 +96,25 @@ public sealed class CharacterDialogueService(AppPaths paths, AtomicJsonStore sto
                 ]
             }
         };
+
+    private static bool MigrateYaroroGreeting(CharacterDialogueCatalog catalog)
+    {
+        if (!IsKoreanYaroro(catalog.CharacterId, catalog.Language) ||
+            !catalog.Groups.TryGetValue(DialogueGroupIds.Click, out var lines))
+            return false;
+
+        var index = lines.FindIndex(line =>
+            line.Id == "click.1" &&
+            line.Text == "안녕! 옆에서 조용히 함께하고 있었어.");
+        if (index < 0) return false;
+
+        lines[index] = lines[index] with { Text = "안녕? 야로로대장이야" };
+        return true;
+    }
+
+    private static bool IsKoreanYaroro(string characterId, string language) =>
+        characterId.Equals("yaroro", StringComparison.OrdinalIgnoreCase) &&
+        language.Equals("ko", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsSafeIdentifier(string value) =>
         !string.IsNullOrWhiteSpace(value) &&

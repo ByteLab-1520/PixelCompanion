@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
 using PixelCompanion.Core.Models;
@@ -12,6 +15,30 @@ public sealed class DialogueEditorWindow : Window
 {
     private sealed record Option(string Id, string Label)
     {
+        public override string ToString() => Label;
+    }
+
+    private sealed class DialogueListItem(DialogueLine value) : INotifyPropertyChanged
+    {
+        public DialogueLine Value { get; private set; } = value;
+
+        public string Label
+        {
+            get
+            {
+                var text = Value.Text.ReplaceLineEndings(" ").Trim();
+                return text.Length > 42 ? text[..42] + "…" : text;
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public void Update(DialogueLine value)
+        {
+            Value = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+        }
+
         public override string ToString() => Label;
     }
 
@@ -50,7 +77,7 @@ public sealed class DialogueEditorWindow : Window
     };
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Dictionary<string, CharacterDialogueCatalog> _catalogs = new(StringComparer.Ordinal);
-    private ObservableCollection<DialogueLine> _visibleLines = [];
+    private ObservableCollection<DialogueListItem> _visibleLines = [];
     private string? _boundLanguage;
     private string? _boundGroup;
     private bool _updating;
@@ -70,6 +97,12 @@ public sealed class DialogueEditorWindow : Window
         _localization = localization;
         _characterId = characterId;
         _preview = preview;
+
+        _lines.ItemTemplate = new FuncDataTemplate<DialogueListItem>(
+            (_, _) => new TextBlock
+            {
+                [!TextBlock.TextProperty] = new Binding(nameof(DialogueListItem.Label))
+            });
 
         Title = localization.Get("dialogueEditor.title");
         Width = 820;
@@ -263,13 +296,20 @@ public sealed class DialogueEditorWindow : Window
             return;
 
         _updating = true;
-        _visibleLines = new ObservableCollection<DialogueLine>(catalog.GetGroup(group));
-        _boundLanguage = language;
-        _boundGroup = group;
-        _lines.ItemsSource = _visibleLines;
-        _lines.SelectedIndex = _visibleLines.Count > 0 ? 0 : -1;
+        try
+        {
+            _visibleLines = new ObservableCollection<DialogueListItem>(
+                catalog.GetGroup(group).Select(line => new DialogueListItem(line)));
+            _boundLanguage = language;
+            _boundGroup = group;
+            _lines.ItemsSource = _visibleLines;
+            _lines.SelectedIndex = _visibleLines.Count > 0 ? 0 : -1;
+        }
+        finally
+        {
+            _updating = false;
+        }
         LoadSelectedLine();
-        _updating = false;
     }
 
     private void CommitVisibleGroup()
@@ -277,45 +317,48 @@ public sealed class DialogueEditorWindow : Window
         if (_boundLanguage is not { } language || _boundGroup is not { } group ||
             !_catalogs.TryGetValue(language, out var catalog))
             return;
-        catalog.Groups[group] = _visibleLines.ToList();
+        catalog.Groups[group] = _visibleLines.Select(item => item.Value).ToList();
     }
 
     private void LoadSelectedLine()
     {
+        if (_updating) return;
         _updating = true;
-        if (_lines.SelectedItem is DialogueLine line)
+        try
         {
-            _text.Text = line.Text;
-            _probability.Value = (decimal)(line.Probability * 100);
-            _minimumAffection.Value = (decimal)line.MinimumAffection;
-            _cooldown.Value = line.CooldownSeconds;
+            if (_lines.SelectedItem is DialogueListItem item)
+            {
+                var line = item.Value;
+                _text.Text = line.Text;
+                _probability.Value = (decimal)(line.Probability * 100);
+                _minimumAffection.Value = (decimal)line.MinimumAffection;
+                _cooldown.Value = line.CooldownSeconds;
+            }
+            else
+            {
+                _text.Text = "";
+                _probability.Value = 100;
+                _minimumAffection.Value = 0;
+                _cooldown.Value = 0;
+            }
         }
-        else
+        finally
         {
-            _text.Text = "";
-            _probability.Value = 100;
-            _minimumAffection.Value = 0;
-            _cooldown.Value = 0;
+            _updating = false;
         }
-        _updating = false;
     }
 
     private void UpdateSelectedLine()
     {
-        if (_updating || _lines.SelectedItem is not DialogueLine selected) return;
-        var index = _visibleLines.IndexOf(selected);
-        if (index < 0) return;
-        var updated = selected with
+        if (_updating || _lines.SelectedItem is not DialogueListItem selected) return;
+        var updated = selected.Value with
         {
             Text = _text.Text ?? "",
             Probability = (double)(_probability.Value ?? 100) / 100,
             MinimumAffection = (double)(_minimumAffection.Value ?? 0),
             CooldownSeconds = (int)(_cooldown.Value ?? 0)
         };
-        _updating = true;
-        _visibleLines[index] = updated;
-        _lines.SelectedIndex = index;
-        _updating = false;
+        selected.Update(updated);
         _dirty = true;
     }
 
@@ -330,14 +373,15 @@ public sealed class DialogueEditorWindow : Window
         var line = new DialogueLine(
             $"{group}.{Guid.NewGuid():N}",
             _localization.Get("dialogueEditor.newLine"));
-        _visibleLines.Add(line);
-        _lines.SelectedItem = line;
+        var item = new DialogueListItem(line);
+        _visibleLines.Add(item);
+        _lines.SelectedItem = item;
         _dirty = true;
     }
 
     private void DeleteLine()
     {
-        if (_lines.SelectedItem is not DialogueLine selected) return;
+        if (_lines.SelectedItem is not DialogueListItem selected) return;
         var index = _visibleLines.IndexOf(selected);
         _visibleLines.Remove(selected);
         _lines.SelectedIndex = _visibleLines.Count == 0 ? -1 : Math.Min(index, _visibleLines.Count - 1);
@@ -346,8 +390,8 @@ public sealed class DialogueEditorWindow : Window
 
     private void TestLine()
     {
-        if (_lines.SelectedItem is DialogueLine { Text.Length: > 0 } line)
-            _preview(line.Text);
+        if (_lines.SelectedItem is DialogueListItem { Value.Text.Length: > 0 } item)
+            _preview(item.Value.Text);
     }
 
     private async Task SaveAsync()

@@ -1,5 +1,5 @@
 #ifndef MyAppVersion
-  #define MyAppVersion "0.4.1"
+  #define MyAppVersion "0.4.2"
 #endif
 
 #ifndef MyAppName
@@ -58,10 +58,19 @@ VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} installer
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
+#ifdef MySetupIcon
+SetupIconFile={#MySetupIcon}
+#endif
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
+
+[CustomMessages]
+english.StandardUninstallMissing=Pixel Companion is registered as installed, but its uninstaller could not be found.
+korean.StandardUninstallMissing=기존 Pixel Companion이 설치되어 있지만 제거 프로그램을 찾지 못했습니다.
+english.StandardUninstallFailed=The existing Pixel Companion installation could not be removed. Please uninstall it manually and try again.
+korean.StandardUninstallFailed=기존 Pixel Companion을 자동으로 제거하지 못했습니다. 직접 제거한 뒤 다시 시도해 주세요.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -81,3 +90,36 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+#ifdef RemoveStandardEdition
+[Code]
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Uninstaller: String;
+  ResultCode: Integer;
+begin
+  Result := '';
+  if not RegQueryStringValue(
+    HKCU,
+    'Software\Microsoft\Windows\CurrentVersion\Uninstall\{7C0E4C61-4D4A-4E64-A9E4-4CD74A040D92}_is1',
+    'UninstallString',
+    Uninstaller) then
+    exit;
+
+  Uninstaller := RemoveQuotes(Uninstaller);
+  if (Uninstaller = '') or not FileExists(Uninstaller) then
+  begin
+    Result := CustomMessage('StandardUninstallMissing');
+    exit;
+  end;
+
+  if not Exec(
+    Uninstaller,
+    '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART',
+    '',
+    SW_HIDE,
+    ewWaitUntilTerminated,
+    ResultCode) or (ResultCode <> 0) then
+    Result := CustomMessage('StandardUninstallFailed');
+end;
+#endif

@@ -2,14 +2,14 @@
 
 ```text
 ┌──────────────────────────────────────┐
-│      PIXEL COMPANION  v0.4.1         │
+│      PIXEL COMPANION  v0.4.2         │
 │       작은 친구, 조용한 동행         │
 └──────────────────────────────────────┘
 ```
 
 **작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
 
-[![Version](https://img.shields.io/badge/version-0.4.1-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.4.2-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
@@ -63,6 +63,16 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 - 한국어 번역이 없으면 영어를, 영어도 없으면 번역 키를 표시해 프로그램이 멈추지 않게 합니다.
 
 아직 모든 계획이 완성된 것은 아닙니다. 타이머, 미디어 반응, 배터리 반응과 세밀한 캐릭터 제작 도구는 아래 로드맵에 따라 차례로 추가할 예정입니다.
+
+---
+
+## ░░ v0.4.2 대사 편집기 Hot Fix
+
+- 야로로판에서 대사 편집기를 열면 창이 멈추던 문제를 고쳤습니다.
+- 문장, 출력 확률, 친밀도와 대기시간을 고치는 동안 선택한 대사가 풀리지 않고 부드럽게 반영됩니다.
+- 야로로판을 설치하면 기존 기본판 프로그램을 먼저 자동 제거합니다. 기본판의 설정과 캐릭터 데이터는 지우지 않습니다.
+- 야로로의 정면 얼굴을 픽셀화한 전용 앱·트레이·인스톨러 아이콘을 적용했습니다.
+- 한국어 기본 인사말은 `안녕? 야로로대장이야`이며, 사용자가 고치지 않은 이전 기본 문구도 안전하게 바뀝니다.
 
 ---
 
@@ -261,8 +271,8 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.1 -Edition Standard
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.1 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.2 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.2 -Edition Yaroro
 ```
 
 서명 전 설치 파일은 다음 폴더에 만들어집니다.
@@ -290,6 +300,7 @@ artifacts/windows/yaroro/installer/
 | `v0.3.3` | Yaroro Hot Fix | 야로로의 걷는 방향을 이동 방향과 일치시키고 사용자 지정 캐릭터의 기존 방향 규칙은 유지 |
 | `v0.4.0` | 두 에디션과 내 대사 | 기본판·for Yaroro판 동시 제공, 독립 설치·데이터, 우클릭 대사 편집과 안전 저장 |
 | `v0.4.1` | 창 위 장애물 Hot Fix | 앞쪽 창의 겹친 구간을 벽으로 인식하고 충돌하면 같은 발판에서 방향 전환 |
+| `v0.4.2` | 대사 편집기 Hot Fix | 편집기 응답 없음 수정, 야로로 설치 시 기본판 프로그램 자동 제거와 사용자 데이터 보존 |
 | `v0.5.0` | 함께 돌보는 재미 | 상태값 변화, 먹이·청소·쓰다듬기·수면, 타이머와 집중 타이머 |
 | `v0.6.0` | Windows 상황 인식 | 자리 비움·복귀, 전체 화면, 시스템 부하, 배터리·충전, 음악·영상 반응 |
 | `v0.7.0` | 캐릭터 제작 도구 | 스프라이트 시트, 프레임 순서와 FPS, 기준점, 히트박스, 소품과 조건부 대사 |

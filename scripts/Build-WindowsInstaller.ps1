@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.4.1',
+    [string] $Version = '0.4.2',
     [ValidateSet('Standard', 'Yaroro')]
     [string] $Edition = 'Standard',
     [ValidateSet('win-x64')]
@@ -125,18 +125,30 @@ if ([string]::IsNullOrWhiteSpace($InnoCompiler) -or -not (Test-Path -LiteralPath
 }
 
 $issPath = Join-Path $repoRoot 'packaging\windows\PixelCompanion.iss'
-& $InnoCompiler `
-    "/DMyAppVersion=$Version" `
-    "/DMyAppName=$appName" `
-    "/DMyAppId=$appId" `
-    "/DMyAppExeName=$appExe" `
-    "/DMyConfigExeName=$configExe" `
-    "/DMyInstallFolder=$installFolder" `
-    "/DMyOutputStem=$outputStem" `
-    "/DMyAutoStartName=$autoStartName" `
-    "/DMyStagingRoot=$stagingRoot" `
-    "/O$installerRoot" `
+$innoArguments = @(
+    "/DMyAppVersion=$Version"
+    "/DMyAppName=$appName"
+    "/DMyAppId=$appId"
+    "/DMyAppExeName=$appExe"
+    "/DMyConfigExeName=$configExe"
+    "/DMyInstallFolder=$installFolder"
+    "/DMyOutputStem=$outputStem"
+    "/DMyAutoStartName=$autoStartName"
+    "/DMyStagingRoot=$stagingRoot"
+    "/O$installerRoot"
     $issPath
+)
+if ($isYaroro) {
+    $setupIcon = Join-Path $repoRoot 'assets\icons\yaroro-icon.ico'
+    if (-not (Test-Path -LiteralPath $setupIcon -PathType Leaf)) {
+        throw "Yaroro installer icon is missing: $setupIcon"
+    }
+    $innoArguments = @(
+        '/DRemoveStandardEdition=1'
+        "/DMySetupIcon=$setupIcon"
+    ) + $innoArguments
+}
+& $InnoCompiler @innoArguments
 if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed.' }
 
 $installer = Join-Path $installerRoot "$outputStem.exe"

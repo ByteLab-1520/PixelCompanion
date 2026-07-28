@@ -5,6 +5,7 @@
     <AssemblyName Condition="'$(ProductEdition)' == 'Standard'">PixelCompanion.Updater</AssemblyName>
     <AssemblyName Condition="'$(ProductEdition)' == 'Yaroro'">PixelCompanion.Yaroro.Updater</AssemblyName>
     <RootNamespace>PixelCompanion.Updater</RootNamespace>
+    <ApplicationIcon Condition="'$(ProductEdition)' == 'Yaroro'">..\..\assets\icons\yaroro-icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PixelCompanion.Core\PixelCompanion.Core.csproj" />
