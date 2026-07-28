@@ -2,14 +2,14 @@
 
 ```text
 ┌──────────────────────────────────────┐
-│      PIXEL COMPANION  v0.3.2         │
+│      PIXEL COMPANION  v0.3.3         │
 │       작은 친구, 조용한 동행         │
 └──────────────────────────────────────┘
 ```
 
 **작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
 
-[![Version](https://img.shields.io/badge/version-0.3.2-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.3.3-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
@@ -63,6 +63,15 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 - 한국어 번역이 없으면 영어를, 영어도 없으면 번역 키를 표시해 프로그램이 멈추지 않게 합니다.
 
 아직 모든 계획이 완성된 것은 아닙니다. 타이머, 미디어 반응, 배터리 반응과 세밀한 캐릭터 제작 도구는 아래 로드맵에 따라 차례로 추가할 예정입니다.
+
+---
+
+## ░░ v0.3.3 for Yaroro Hot Fix
+
+- 야로로 걷기 이미지가 이동 방향과 반대로 보이던 문제를 수정했습니다.
+- 왼쪽을 기본 방향으로 그린 야로로는 왼쪽 이동 시 원본 그대로, 오른쪽 이동 시에만 좌우 반전됩니다.
+- 사용자가 직접 설정한 기존 캐릭터 이미지는 종전의 오른쪽 기준을 유지합니다.
+- 네 가지 이동 방향·원본 방향 조합을 검사하는 회귀 테스트를 추가했습니다.
 
 ---
 
@@ -226,7 +235,7 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.3.2
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.3.3
 ```
 
 서명 전 설치 파일은 다음 폴더에 만들어집니다.
@@ -250,6 +259,7 @@ artifacts/windows/installer/
 | `v0.2.0` | 캐릭터 이미지와 업데이트 기반 | 이미지 슬롯, 걷기 프레임, Release 확인, 미서명 설치 파일의 안전한 수동 업데이트 |
 | `v0.3.0` | 창 위에서도 조용히 함께하기 | 프로그램 창 위 걷기·추적·안전 복구, 이동 영역 편집기, 다중 모니터·DPI 대응, 클릭 통과, 자동 시작과 트레이 메뉴 개선 |
 | `v0.3.2` | Yaroro 특별 빌드 | 야로로 기본 캐릭터, 걷기 3프레임, 사람의 밥 식사 모션, 잠자기 모션과 별도 자산 권리 고지 |
+| `v0.3.3` | Yaroro Hot Fix | 야로로의 걷는 방향을 이동 방향과 일치시키고 사용자 지정 캐릭터의 기존 방향 규칙은 유지 |
 | `v0.4.0` | 함께 돌보는 재미 | 상태값 변화, 먹이·청소·쓰다듬기·수면, 타이머와 집중 타이머 |
 | `v0.5.0` | Windows 상황 인식 | 자리 비움·복귀, 전체 화면, 시스템 부하, 배터리·충전, 음악·영상 반응 |
 | `v0.6.0` | 캐릭터 제작 도구 | 스프라이트 시트, 프레임 순서와 FPS, 기준점, 히트박스, 소품과 조건부 대사 |

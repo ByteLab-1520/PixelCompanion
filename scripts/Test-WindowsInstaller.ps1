@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory)]
     [string] $InstallerPath,
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.3.2'
+    [string] $Version = '0.3.3'
 )
 
 $ErrorActionPreference = 'Stop'

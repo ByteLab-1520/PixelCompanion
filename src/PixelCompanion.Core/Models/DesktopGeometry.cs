@@ -69,6 +69,9 @@ public static class MovementGeometry
         return surface.Bounds.X + (Math.Clamp(relativeX, 0, 1) * travel);
     }
 
+    public static double HorizontalScale(bool movingLeft, bool frameFacesLeft) =>
+        movingLeft == frameFacesLeft ? 1 : -1;
+
     private static double DistanceSquared(MovementSurface surface, DesktopPoint point)
     {
         var nearestX = Math.Clamp(point.X, surface.Bounds.X, surface.Bounds.Right);

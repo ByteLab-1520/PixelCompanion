@@ -28,6 +28,12 @@
 - Keep custom character images and v0.3.0 settings fully compatible.
 - Keep the Yaroro asset notice separate from the MIT software license.
 
+## 0.3.3 Yaroro Hot Fix
+
+- Correct Yaroro's bundled left-facing frames so the character faces the actual movement direction.
+- Preserve the existing right-facing convention for user-supplied character images.
+- Add regression coverage for both source-facing directions and both movement directions.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.
