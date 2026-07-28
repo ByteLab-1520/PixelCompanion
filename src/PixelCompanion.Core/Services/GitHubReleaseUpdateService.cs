@@ -7,9 +7,9 @@ namespace PixelCompanion.Core.Services;
 
 public sealed class GitHubReleaseUpdateService
 {
-    public const string InstallerAssetName = "PixelCompanion-Installer.exe";
-    public const string ChecksumAssetName = "PixelCompanion-Installer.exe.sha256";
-    public const string SignatureMarkerAssetName = "PixelCompanion-Installer.exe.authenticode.json";
+    public static string InstallerAssetName => ProductEditionInfo.InstallerAssetName;
+    public static string ChecksumAssetName => ProductEditionInfo.ChecksumAssetName;
+    public static string SignatureMarkerAssetName => ProductEditionInfo.SignatureMarkerAssetName;
     public static readonly Uri LatestReleaseApi = new("https://api.github.com/repos/ByteLab-1520/PixelCompanion/releases/latest");
     private readonly HttpClient _client;
 

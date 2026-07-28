@@ -2,7 +2,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <AssemblyName>PixelCompanion.Config</AssemblyName>
+    <AssemblyName Condition="'$(ProductEdition)' == 'Standard'">PixelCompanion.Config</AssemblyName>
+    <AssemblyName Condition="'$(ProductEdition)' == 'Yaroro'">PixelCompanion.Yaroro.Config</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" />
@@ -11,7 +12,10 @@
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <ProjectReference Include="..\PixelCompanion.Core\PixelCompanion.Core.csproj" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(ProductEdition)' == 'Standard'">
+    <Content Include="..\..\assets\characters\DefaultCat\**\*" Link="characters\DefaultCat\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ProductEdition)' == 'Yaroro'">
     <Content Include="..\..\assets\characters\Yaroro\**\*" Link="characters\Yaroro\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

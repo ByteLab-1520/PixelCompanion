@@ -8,8 +8,6 @@ namespace PixelCompanion.Updater;
 
 internal static partial class Program
 {
-    private const string MainExecutableName = "PixelCompanion.exe";
-
     [STAThread]
     private static async Task<int> Main(string[] args)
     {
@@ -22,9 +20,11 @@ internal static partial class Program
             return 2;
         }
 
-        var mainExecutable = Path.Combine(Path.GetFullPath(installDirectory), MainExecutableName);
+        var mainExecutable = Path.Combine(
+            Path.GetFullPath(installDirectory),
+            ProductEditionInfo.DesktopExecutableName);
         var dataRoot = options.GetValueOrDefault("data-dir") ??
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PixelCompanion");
+            new AppPaths().Root;
         var downloadDirectory = Path.Combine(dataRoot, "updates", "downloads");
         var logPath = Path.Combine(dataRoot, "logs", "updater.log");
 

@@ -22,6 +22,7 @@ public sealed class PetWindow : Window
     private readonly PetStateService _petStateService = new();
     private readonly DialogueSelector _dialogues = new();
     private readonly UserCharacterService _characterService;
+    private readonly CharacterDialogueService _dialogueService;
     private readonly IDesktopIntegration _desktopIntegration;
     private readonly DispatcherTimer _movementTimer;
     private readonly DispatcherTimer _animationTimer;
@@ -31,6 +32,7 @@ public sealed class PetWindow : Window
     private readonly Dictionary<CharacterImageSlot, Bitmap> _characterBitmaps = [];
     private readonly Border _bubble;
     private readonly TextBlock _bubbleText;
+    private CharacterDialogueCatalog _dialogueCatalog = new();
     private AppSettings _settings;
     private PetState _petState;
     private PixelPoint _dragPointerStart;
@@ -41,7 +43,7 @@ public sealed class PetWindow : Window
     private long _lastMovementMs;
     private long _nextDecisionMs;
     private bool _bob;
-    private bool _currentFrameFacesLeft = true;
+    private bool _currentFrameFacesLeft = ProductEditionInfo.DefaultFrameFacesLeft;
     private int _animationFrame;
     private int _profilePollTicks;
     private DateTime _lastProfileWriteUtc;
@@ -71,6 +73,7 @@ public sealed class PetWindow : Window
     private IReadOnlyList<CharacterImageSlot> _specialAnimation = [];
     private long _specialAnimationUntilMs;
     private int _specialAnimationFrame;
+    private bool _dialogueEditorOpen;
 
     public bool BehaviorPaused => _settings.BehaviorPaused;
     public bool ClickThrough => _settings.ClickThrough;
@@ -89,6 +92,7 @@ public sealed class PetWindow : Window
         _settings = settings;
         _petState = petState;
         _characterService = new UserCharacterService(paths, store);
+        _dialogueService = new CharacterDialogueService(paths, store);
         _desktopIntegration = OperatingSystem.IsWindows()
             ? new WindowsDesktopIntegration()
             : new SafeDesktopIntegration();
@@ -102,13 +106,14 @@ public sealed class PetWindow : Window
         CanResize = false;
         Topmost = settings.AlwaysOnTop;
         Opacity = settings.Opacity;
-        Title = localization.Get("app.name");
+        Title = ProductEditionInfo.LocalizeDisplayName(localization.Get("app.name"));
 
         foreach (var slot in CharacterImageSlots.All)
         {
             var assetName = BundledAssetName(slot);
             _bundledCharacters[slot] = new Bitmap(
-                AssetLoader.Open(new Uri($"avares://PixelCompanion/Assets/{assetName}")));
+                AssetLoader.Open(new Uri(
+                    $"avares://{ProductEditionInfo.DesktopAssemblyName}/Assets/{assetName}")));
         }
         _character = new Image
         {
@@ -190,6 +195,7 @@ public sealed class PetWindow : Window
         menu.Items.Add(Item("menu.feed", FeedAsync));
         menu.Items.Add(Item("menu.play", PlayAsync));
         menu.Items.Add(Item("menu.sleep", SleepAsync));
+        menu.Items.Add(Item("menu.editDialogues", OpenDialogueEditor));
         menu.Items.Add(new Separator());
         menu.Items.Add(pause);
         menu.Items.Add(speed);
@@ -318,7 +324,8 @@ public sealed class PetWindow : Window
             _ = ReloadExternalSettingsAsync();
         }
 
-        var inactive = _dragging || _transitioning || _recovering || now < _specialAnimationUntilMs ||
+        var inactive = _dragging || _transitioning || _recovering || _dialogueEditorOpen ||
+                       now < _specialAnimationUntilMs ||
                        _settings.BehaviorPaused || _settings.DoNotDisturb || !IsVisible;
         SetMovementTimerInterval(inactive ? 500 : _walking ? 66 : 250);
         if (inactive) return;
@@ -428,6 +435,7 @@ public sealed class PetWindow : Window
                 ? File.GetLastWriteTimeUtc(_paths.UserCharacterProfileFile)
                 : DateTime.MinValue;
             SetCharacterFrame(CharacterImageSlot.Default);
+            await LoadDialoguesAsync();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
         {
@@ -450,7 +458,7 @@ public sealed class PetWindow : Window
         else if (_bundledCharacters.TryGetValue(slot, out selected) ||
                  _bundledCharacters.TryGetValue(CharacterImageSlot.Default, out selected))
         {
-            _currentFrameFacesLeft = true;
+            _currentFrameFacesLeft = ProductEditionInfo.DefaultFrameFacesLeft;
         }
         else
         {
@@ -462,16 +470,16 @@ public sealed class PetWindow : Window
 
     private static string BundledAssetName(CharacterImageSlot slot) => slot switch
     {
-        CharacterImageSlot.Default => "yaroro-default.png",
-        CharacterImageSlot.Back => "yaroro-back.png",
-        CharacterImageSlot.Walk1 => "yaroro-walk-1.png",
-        CharacterImageSlot.Walk2 => "yaroro-walk-2.png",
-        CharacterImageSlot.Walk3 => "yaroro-walk-3.png",
-        CharacterImageSlot.Eat1 => "yaroro-eat-1.png",
-        CharacterImageSlot.Eat2 => "yaroro-eat-2.png",
-        CharacterImageSlot.Sleep1 => "yaroro-sleep-1.png",
-        CharacterImageSlot.Sleep2 => "yaroro-sleep-2.png",
-        _ => "yaroro-default.png"
+        CharacterImageSlot.Default => "character-default.png",
+        CharacterImageSlot.Back => "character-back.png",
+        CharacterImageSlot.Walk1 => "character-walk-1.png",
+        CharacterImageSlot.Walk2 => "character-walk-2.png",
+        CharacterImageSlot.Walk3 => "character-walk-3.png",
+        CharacterImageSlot.Eat1 => "character-eat-1.png",
+        CharacterImageSlot.Eat2 => "character-eat-2.png",
+        CharacterImageSlot.Sleep1 => "character-sleep-1.png",
+        CharacterImageSlot.Sleep2 => "character-sleep-2.png",
+        _ => "character-default.png"
     };
 
     private void StartSpecialAnimation(IReadOnlyList<CharacterImageSlot> frames, int durationMilliseconds)
@@ -857,15 +865,68 @@ public sealed class PetWindow : Window
         _ => Math.Clamp(_settings.CustomPixelsPerSecond, 5, 240)
     };
 
-    private void ShowRandomGreeting()
+    private void ShowRandomGreeting() => ShowDialogue(DialogueGroupIds.Click);
+
+    private string ActiveDialogueCharacterId =>
+        _characterBitmaps.Count > 0 ? "user-character" : ProductEditionInfo.DefaultCharacterId;
+
+    private async Task LoadDialoguesAsync()
     {
-        var lines = new[]
+        var characterId = ActiveDialogueCharacterId;
+        var language = _localization.Language;
+        try
         {
-            new DialogueLine("click.1", _localization.Get("dialogue.click.1")),
-            new DialogueLine("click.2", _localization.Get("dialogue.click.2"))
+            _dialogueCatalog = await _dialogueService.LoadAsync(
+                characterId,
+                language,
+                () => CharacterDialogueService.CreateDefaults(
+                    characterId,
+                    language,
+                    key => _localization.Get(key)));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            _dialogueCatalog = CharacterDialogueService.CreateDefaults(
+                characterId,
+                language,
+                key => _localization.Get(key));
+        }
+    }
+
+    private void ShowDialogue(string groupId)
+    {
+        var selected = _dialogues.Select(
+            _dialogueCatalog.GetGroup(groupId),
+            _petState.Affection,
+            DateTimeOffset.UtcNow);
+        if (selected is not null) ShowBubble(ExpandDialogueVariables(selected.Text));
+    }
+
+    private static string ExpandDialogueVariables(string text) =>
+        text.Replace(
+            "{time}",
+            DateTime.Now.ToString("t", System.Globalization.CultureInfo.CurrentCulture),
+            StringComparison.OrdinalIgnoreCase);
+
+    private void OpenDialogueEditor()
+    {
+        if (_dialogueEditorOpen) return;
+        _dialogueEditorOpen = true;
+        _walking = false;
+        var editor = new DialogueEditorWindow(
+            _paths,
+            _store,
+            _localization,
+            ActiveDialogueCharacterId,
+            text => ShowBubble(ExpandDialogueVariables(text)));
+        editor.DialoguesSaved += async (_, _) => await LoadDialoguesAsync();
+        editor.Closed += async (_, _) =>
+        {
+            _dialogueEditorOpen = false;
+            _nextDecisionMs = _clock.ElapsedMilliseconds + 1500;
+            await LoadDialoguesAsync();
         };
-        var selected = _dialogues.Select(lines, _petState.Affection, DateTimeOffset.UtcNow);
-        if (selected is not null) ShowBubble(selected.Text);
+        editor.Show(this);
     }
 
     private async void ShowBubble(string text)
@@ -880,20 +941,20 @@ public sealed class PetWindow : Window
     {
         _petState = _petStateService.Feed(_petState, DateTimeOffset.UtcNow);
         StartSpecialAnimation([CharacterImageSlot.Eat1, CharacterImageSlot.Eat2], 3200);
-        ShowBubble(_localization.Get("dialogue.feed"));
+        ShowDialogue(DialogueGroupIds.Feed);
         await _store.SaveAsync(_paths.PetStateFile, _petState);
     }
 
     private void SleepAsync()
     {
         StartSpecialAnimation([CharacterImageSlot.Sleep1, CharacterImageSlot.Sleep2], 8000);
-        ShowBubble(_localization.Get("dialogue.sleep"));
+        ShowDialogue(DialogueGroupIds.Sleep);
     }
 
     private async void PlayAsync()
     {
         _petState = _petStateService.Play(_petState, DateTimeOffset.UtcNow);
-        ShowBubble(_localization.Get("dialogue.play"));
+        ShowDialogue(DialogueGroupIds.Play);
         await _store.SaveAsync(_paths.PetStateFile, _petState);
     }
 
@@ -909,8 +970,9 @@ public sealed class PetWindow : Window
         var resources = await LocalizationService.LoadFileAsync(path);
         _localization.ChangeLanguage(language, resources);
         _settings = _settings with { Language = language };
-        Title = _localization.Get("app.name");
+        Title = ProductEditionInfo.LocalizeDisplayName(_localization.Get("app.name"));
         ContextMenu = BuildContextMenu();
+        await LoadDialoguesAsync();
         await SaveSettingsAsync();
         QuickSettingsChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -1011,7 +1073,9 @@ public sealed class PetWindow : Window
 
     public void OpenAdvancedSettings()
     {
-        var name = OperatingSystem.IsWindows() ? "PixelCompanion.Config.exe" : "PixelCompanion.Config";
+        var name = OperatingSystem.IsWindows()
+            ? ProductEditionInfo.ConfigExecutableName
+            : Path.GetFileNameWithoutExtension(ProductEditionInfo.ConfigExecutableName);
         var path = Path.Combine(AppContext.BaseDirectory, name);
         if (File.Exists(path)) Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
     }
@@ -1085,7 +1149,7 @@ public sealed class PetWindow : Window
     private async void StartUpdate()
     {
         if (_availableUpdate is not { SupportsAutomaticInstall: true }) return;
-        var installedUpdater = Path.Combine(AppContext.BaseDirectory, "PixelCompanion.Updater.exe");
+        var installedUpdater = Path.Combine(AppContext.BaseDirectory, ProductEditionInfo.UpdaterExecutableName);
         if (!File.Exists(installedUpdater))
         {
             ShowBubble(_localization.Get("update.updaterMissing"));
@@ -1096,7 +1160,7 @@ public sealed class PetWindow : Window
         {
             var runnerDirectory = Path.Combine(_paths.Updates, "runner");
             Directory.CreateDirectory(runnerDirectory);
-            var runner = Path.Combine(runnerDirectory, "PixelCompanion.Updater.exe");
+            var runner = Path.Combine(runnerDirectory, ProductEditionInfo.UpdaterExecutableName);
             File.Copy(installedUpdater, runner, true);
             var currentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 1, 0);
             var startInfo = new ProcessStartInfo(runner) { UseShellExecute = true };

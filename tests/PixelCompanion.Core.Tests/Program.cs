@@ -10,6 +10,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("localization falls back to English then key", TestLocalizationFallback),
     ("atomic JSON store round-trips and recovers", TestAtomicStore),
     ("dialogue selection excludes recent lines", TestDialogueSelection),
+    ("character dialogue files round-trip, validate, and recover", TestCharacterDialogues),
     ("bundled character pack is valid", TestBundledPack),
     ("bundled character action sprites are complete", TestBundledActionSprites),
     ("character images validate contents and persist slots", TestCharacterImages),
@@ -89,9 +90,47 @@ static Task TestDialogueSelection()
     return Task.CompletedTask;
 }
 
+static async Task TestCharacterDialogues()
+{
+    var root = Path.Combine(Path.GetTempPath(), "PixelCompanionTests", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var paths = new AppPaths(root);
+        var service = new CharacterDialogueService(paths, new AtomicJsonStore());
+        var catalog = CharacterDialogueService.CreateDefaults("test-character", "ko", key => key);
+        await service.SaveAsync(catalog);
+        await service.SaveAsync(catalog with
+        {
+            Groups = catalog.Groups.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Key == DialogueGroupIds.Click
+                    ? new List<DialogueLine> { new("custom.1", "직접 쓴 대사") }
+                    : pair.Value,
+                StringComparer.Ordinal)
+        });
+
+        var loaded = await service.LoadAsync("test-character", "ko", () => catalog);
+        Assert(loaded.GetGroup(DialogueGroupIds.Click).Single().Text == "직접 쓴 대사", "dialogue round trip failed");
+        Assert(File.Exists(paths.GetDialogueFile("test-character", "ko") + ".bak"), "dialogue backup was not created");
+
+        var invalid = loaded with
+        {
+            Groups = new Dictionary<string, List<DialogueLine>>
+            {
+                [DialogueGroupIds.Click] = [new("bad", "", Probability: 2)]
+            }
+        };
+        Assert(CharacterDialogueService.Validate(invalid).Count >= 2, "invalid dialogue data was accepted");
+    }
+    finally { Directory.Delete(root, true); }
+}
+
 static async Task TestBundledPack()
 {
-    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters", "Yaroro"));
+    var root = Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters",
+        ProductEditionInfo.DefaultCharacterFolder));
     var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
     var manifest = JsonSerializer.Deserialize<CharacterManifest>(await File.ReadAllTextAsync(Path.Combine(root, "character.json")), options)!;
     var catalog = JsonSerializer.Deserialize<AnimationCatalog>(await File.ReadAllTextAsync(Path.Combine(root, "animations.json")), options)!;
@@ -101,26 +140,30 @@ static async Task TestBundledPack()
 
 static async Task TestBundledActionSprites()
 {
-    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters", "Yaroro", "sprites"));
+    var root = Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters",
+        ProductEditionInfo.DefaultCharacterFolder, "sprites"));
+    var prefix = ProductEditionInfo.IsYaroro ? "yaroro" : "default-cat";
     var files = new[]
     {
-        "yaroro-default.png",
-        "yaroro-back.png",
-        "yaroro-walk-1.png",
-        "yaroro-walk-2.png",
-        "yaroro-walk-3.png",
-        "yaroro-eat-1.png",
-        "yaroro-eat-2.png",
-        "yaroro-sleep-1.png",
-        "yaroro-sleep-2.png"
+        ProductEditionInfo.IsYaroro ? "yaroro-default.png" : "default-cat.png",
+        $"{prefix}-back.png",
+        $"{prefix}-walk-1.png",
+        $"{prefix}-walk-2.png",
+        $"{prefix}-walk-3.png",
+        $"{prefix}-eat-1.png",
+        $"{prefix}-eat-2.png",
+        $"{prefix}-sleep-1.png",
+        $"{prefix}-sleep-2.png"
     };
+    var expectedSize = ProductEditionInfo.IsYaroro ? 418 : 128;
     foreach (var file in files)
     {
         var bytes = await File.ReadAllBytesAsync(Path.Combine(root, file));
         Assert(bytes.Length > 32 && bytes.AsSpan(1, 3).SequenceEqual("PNG"u8), $"{file} is not a PNG");
         var width = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(16, 4));
         var height = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(20, 4));
-        Assert(width == 418 && height == 418, $"{file} must use a 418x418 canvas");
+        Assert(width == expectedSize && height == expectedSize, $"{file} must use a {expectedSize}x{expectedSize} canvas");
         Assert(bytes[25] is 4 or 6, $"{file} must contain an alpha channel");
     }
 }
@@ -164,19 +207,21 @@ static Task TestLegacyCharacterSlots()
 static async Task TestReleaseUpdate()
 {
     const string hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    var installerName = ProductEditionInfo.InstallerAssetName;
+    var markerName = ProductEditionInfo.SignatureMarkerAssetName;
     var json = $$"""
         {
           "tag_name": "v0.2.0",
           "html_url": "https://github.com/ByteLab-1520/PixelCompanion/releases/tag/v0.2.0",
           "assets": [
             {
-              "name": "PixelCompanion-Installer.exe",
-              "browser_download_url": "https://example.test/PixelCompanion-Installer.exe",
+              "name": "{{installerName}}",
+              "browser_download_url": "https://example.test/{{installerName}}",
               "digest": "sha256:{{hash}}"
             },
             {
-              "name": "PixelCompanion-Installer.exe.authenticode.json",
-              "browser_download_url": "https://example.test/PixelCompanion-Installer.exe.authenticode.json",
+              "name": "{{markerName}}",
+              "browser_download_url": "https://example.test/{{markerName}}",
               "digest": null
             }
           ]
@@ -190,7 +235,7 @@ static async Task TestReleaseUpdate()
     Assert(release?.SupportsAutomaticInstall == true, "signed release marker was not detected");
 
     var unsignedJson = json.Replace(
-        "PixelCompanion-Installer.exe.authenticode.json",
+        markerName,
         "UNSIGNED_INSTALLER.txt",
         StringComparison.Ordinal);
     using var unsignedClient = new HttpClient(new StubHttpHandler(unsignedJson));
@@ -264,7 +309,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.3.3";
+    const string version = "0.4.0";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

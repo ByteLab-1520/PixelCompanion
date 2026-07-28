@@ -1,6 +1,9 @@
 namespace PixelCompanion.Core.Services;
 
-public sealed record DialogueLine(string Id, string Text, double Probability = 1, double MinimumAffection = 0, int CooldownSeconds = 0);
+public sealed record DialogueLine(string Id, string Text, double Probability = 1, double MinimumAffection = 0, int CooldownSeconds = 0)
+{
+    public override string ToString() => Text;
+}
 
 public sealed class DialogueSelector(int recentExclusionCount = 2, Random? random = null)
 {
@@ -27,4 +30,3 @@ public sealed class DialogueSelector(int recentExclusionCount = 2, Random? rando
         return selected;
     }
 }
-

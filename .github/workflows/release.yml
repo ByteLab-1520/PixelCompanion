@@ -52,28 +52,47 @@ jobs:
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "notes=$notes" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-      - name: Build Windows installer
+      - name: Build Standard Windows installer
         shell: powershell
-        run: .\scripts\Build-WindowsInstaller.ps1 -Version '${{ steps.version.outputs.version }}'
+        run: .\scripts\Build-WindowsInstaller.ps1 -Version '${{ steps.version.outputs.version }}' -Edition Standard
 
-      - name: Smoke-test installer
+      - name: Build for Yaroro Windows installer
         shell: powershell
-        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version '${{ steps.version.outputs.version }}'
+        run: .\scripts\Build-WindowsInstaller.ps1 -Version '${{ steps.version.outputs.version }}' -Edition Yaroro
+
+      - name: Smoke-test both installers
+        shell: powershell
+        run: |
+          .\scripts\Test-WindowsInstaller.ps1 `
+            -InstallerPath .\artifacts\windows\standard\installer\PixelCompanion-Installer.exe `
+            -Version '${{ steps.version.outputs.version }}' `
+            -Edition Standard
+          .\scripts\Test-WindowsInstaller.ps1 `
+            -InstallerPath .\artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe `
+            -Version '${{ steps.version.outputs.version }}' `
+            -Edition Yaroro
 
       - name: Prepare unsigned release files
         shell: powershell
         run: |
           .\scripts\Prepare-UnsignedWindowsRelease.ps1 `
-            -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe `
-            -Version '${{ steps.version.outputs.version }}'
+            -InstallerPath .\artifacts\windows\standard\installer\PixelCompanion-Installer.exe `
+            -Version '${{ steps.version.outputs.version }}' `
+            -Edition Standard
+          .\scripts\Prepare-UnsignedWindowsRelease.ps1 `
+            -InstallerPath .\artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe `
+            -Version '${{ steps.version.outputs.version }}' `
+            -Edition Yaroro
 
       - name: Upload verified release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PixelCompanion-Windows-Installer-${{ github.ref_name }}
+          name: PixelCompanion-Windows-Installers-${{ github.ref_name }}
           path: |
             artifacts/windows/release/PixelCompanion-Installer.exe
             artifacts/windows/release/PixelCompanion-Installer.exe.sha256
+            artifacts/windows/release/PixelCompanion-Yaroro-Installer.exe
+            artifacts/windows/release/PixelCompanion-Yaroro-Installer.exe.sha256
             artifacts/windows/release/UNSIGNED_INSTALLER.txt
           if-no-files-found: error
 
@@ -85,6 +104,8 @@ jobs:
           gh release create '${{ github.ref_name }}' `
             'artifacts/windows/release/PixelCompanion-Installer.exe' `
             'artifacts/windows/release/PixelCompanion-Installer.exe.sha256' `
+            'artifacts/windows/release/PixelCompanion-Yaroro-Installer.exe' `
+            'artifacts/windows/release/PixelCompanion-Yaroro-Installer.exe.sha256' `
             'artifacts/windows/release/UNSIGNED_INSTALLER.txt' `
             --verify-tag `
             --title 'Pixel Companion ${{ github.ref_name }}' `

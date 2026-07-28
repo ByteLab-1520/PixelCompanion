@@ -50,8 +50,9 @@ public sealed class App : Application
     {
         _trayIcon = new TrayIcon
         {
-            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://PixelCompanion/Assets/yaroro-default.png"))),
-            ToolTipText = localization.Get("app.name"),
+            Icon = new WindowIcon(AssetLoader.Open(new Uri(
+                $"avares://{ProductEditionInfo.DesktopAssemblyName}/Assets/character-default.png"))),
+            ToolTipText = ProductEditionInfo.LocalizeDisplayName(localization.Get("app.name")),
             Menu = BuildMenu(),
             IsVisible = true
         };
@@ -59,7 +60,7 @@ public sealed class App : Application
         window.QuickSettingsChanged += (_, _) =>
         {
             if (_trayIcon is null) return;
-            _trayIcon.ToolTipText = localization.Get("app.name");
+            _trayIcon.ToolTipText = ProductEditionInfo.LocalizeDisplayName(localization.Get("app.name"));
             _trayIcon.Menu = BuildMenu();
         };
         TrayIcon.SetIcons(this, new TrayIcons { _trayIcon });

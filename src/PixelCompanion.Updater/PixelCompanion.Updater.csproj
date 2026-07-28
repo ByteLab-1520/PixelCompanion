@@ -2,7 +2,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
-    <AssemblyName>PixelCompanion.Updater</AssemblyName>
+    <AssemblyName Condition="'$(ProductEdition)' == 'Standard'">PixelCompanion.Updater</AssemblyName>
+    <AssemblyName Condition="'$(ProductEdition)' == 'Yaroro'">PixelCompanion.Yaroro.Updater</AssemblyName>
     <RootNamespace>PixelCompanion.Updater</RootNamespace>
   </PropertyGroup>
   <ItemGroup>

@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory)]
     [string] $InstallerPath,
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.3.3'
+    [string] $Version = '0.4.0',
+    [ValidateSet('Standard', 'Yaroro')]
+    [string] $Edition = 'Standard'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,7 +18,8 @@ if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
     throw "Installer was not found: $installer"
 }
 
-$testRoot = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot 'windows\install-smoke-test'))
+$editionKey = $Edition.ToLowerInvariant()
+$testRoot = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "windows\$editionKey\install-smoke-test"))
 if (-not $testRoot.StartsWith($artifactsRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "Smoke-test directory must stay inside artifacts: $testRoot"
 }
@@ -38,11 +41,11 @@ try {
         throw "Installer smoke test failed with exit code $($install.ExitCode)."
     }
 
-    $executables = @(
-        'PixelCompanion.exe',
-        'PixelCompanion.Config.exe',
-        'PixelCompanion.Updater.exe'
-    )
+    $executables = if ($Edition -eq 'Yaroro') {
+        @('PixelCompanion.Yaroro.exe', 'PixelCompanion.Yaroro.Config.exe', 'PixelCompanion.Yaroro.Updater.exe')
+    } else {
+        @('PixelCompanion.exe', 'PixelCompanion.Config.exe', 'PixelCompanion.Updater.exe')
+    }
     foreach ($name in $executables) {
         $path = Join-Path $testRoot $name
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
@@ -56,7 +59,7 @@ try {
         }
     }
 
-    Write-Output "PASS installer smoke test for version $Version"
+    Write-Output "PASS $Edition installer smoke test for version $Version"
 }
 finally {
     $uninstaller = Join-Path $testRoot 'unins000.exe'

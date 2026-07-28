@@ -2,7 +2,7 @@
 
 Windows releases are created from version tags on `main`. Until a trusted code-signing certificate is available, each GitHub Release clearly identifies the installer as unsigned and includes a SHA-256 checksum plus `UNSIGNED_INSTALLER.txt`.
 
-The desktop app may detect every GitHub Release, but it offers unattended installation only when the Release contains `PixelCompanion-Installer.exe.authenticode.json`. The updater still verifies the downloaded SHA-256 and the installer's trusted Authenticode signature before it can replace an installation. Unsigned releases open the official GitHub Release page for a manual download instead.
+Each edition selects its own asset from the same GitHub Release. The desktop app offers unattended installation only when the matching installer has an `.authenticode.json` marker. The updater still verifies the downloaded SHA-256 and the installer's trusted Authenticode signature before it can replace an installation. Unsigned releases open the official GitHub Release page for a manual download instead.
 
 ## Creating an unsigned release
 
@@ -17,9 +17,12 @@ The workflow stops without publishing if the tag version does not match, the tag
 Build and prepare the same files locally:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.3.3
-powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.3.3
-powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.3.3
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\standard\installer\PixelCompanion-Installer.exe -Version 0.4.0 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe -Version 0.4.0 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\standard\installer\PixelCompanion-Installer.exe -Version 0.4.0 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe -Version 0.4.0 -Edition Yaroro
 ```
 
 The publishable files are written to `artifacts/windows/release/`.
@@ -32,6 +35,9 @@ A signed release must attach all three files:
 
 - `PixelCompanion-Installer.exe`
 - `PixelCompanion-Installer.exe.sha256`
+- `PixelCompanion-Yaroro-Installer.exe`
+- `PixelCompanion-Yaroro-Installer.exe.sha256`
 - `PixelCompanion-Installer.exe.authenticode.json`
+- `PixelCompanion-Yaroro-Installer.exe.authenticode.json`
 
 The marker file enables the automatic-install button; it does not bypass the updater's own checksum and Authenticode verification.

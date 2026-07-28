@@ -6,6 +6,8 @@
 
 Both use `PixelCompanion.Core` and the operating-system user-data directory. `AtomicJsonStore` coordinates writers across both processes with a lock file, writes a temporary file, verifies it, backs up the previous value, and atomically replaces the target. Callers continue treating transient IO failures as recoverable.
 
+The Standard and `for Yaroro` editions are compile-time product flavors, not runtime character switches. They use distinct executable names, installers, install locations, auto-start entries, user-data roots, bundled characters, and GitHub Release assets. The lightweight dialogue editor remains inside `PixelCompanion.Desktop`; the separate Config application continues to own image and animation authoring.
+
 ## Core boundaries
 
 - Models are platform- and UI-independent records.
@@ -13,6 +15,7 @@ Both use `PixelCompanion.Core` and the operating-system user-data directory. `At
 - `PetStateService` uses wall-clock elapsed time and caps offline progression at 12 hours.
 - `LocalizationService` resolves selected language → English → key and reports missing keys without throwing.
 - `CharacterPackValidator` rejects unsafe paths and missing required animation data while optional animation fallback remains a renderer concern.
+- `CharacterDialogueService` validates per-character, per-language dialogue catalogs and stores them through `AtomicJsonStore`; runtime reloads saved dialogue without restarting the pet.
 - `IPlatformServices` is the capability boundary for media, battery, idle time, fullscreen, load, auto-start, and notifications. Unsupported APIs return unavailable snapshots rather than failing the application.
 - `IDesktopIntegration` is the runtime boundary for read-only program-window discovery, full-screen detection, click-through, the click-through recovery hotkey, and login startup. The Windows adapter only reads target-window metadata; it never sends target windows move, resize, minimize, or input commands.
 - `MovementGeometry` keeps monitor, custom-region, and window-top placement calculations independent from Avalonia and Win32 so clamping, DPI-aware placement, and recovery rules can be tested without opening a desktop window.

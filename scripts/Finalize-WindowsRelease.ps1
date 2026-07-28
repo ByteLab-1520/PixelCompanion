@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory)]
     [string] $SignedInstallerPath,
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.3.3',
+    [string] $Version = '0.4.0',
+    [ValidateSet('Standard', 'Yaroro')]
+    [string] $Edition = 'Standard',
     [string] $OutputDirectory
 )
 
@@ -38,7 +40,12 @@ if (-not $output.StartsWith($artifactsRoot, [System.StringComparison]::OrdinalIg
 }
 
 New-Item -ItemType Directory -Path $output -Force | Out-Null
-$releaseInstaller = Join-Path $output 'PixelCompanion-Installer.exe'
+$releaseFileName = if ($Edition -eq 'Yaroro') {
+    'PixelCompanion-Yaroro-Installer.exe'
+} else {
+    'PixelCompanion-Installer.exe'
+}
+$releaseInstaller = Join-Path $output $releaseFileName
 if (-not $source.Equals($releaseInstaller, [System.StringComparison]::OrdinalIgnoreCase)) {
     Copy-Item -LiteralPath $source -Destination $releaseInstaller -Force
 }
@@ -46,7 +53,7 @@ if (-not $source.Equals($releaseInstaller, [System.StringComparison]::OrdinalIgn
 $hash = Get-FileHash -LiteralPath $releaseInstaller -Algorithm SHA256
 $hashValue = $hash.Hash.ToLowerInvariant()
 $checksumPath = $releaseInstaller + '.sha256'
-Set-Content -LiteralPath $checksumPath -Value "$hashValue  PixelCompanion-Installer.exe" -Encoding Ascii
+Set-Content -LiteralPath $checksumPath -Value "$hashValue  $releaseFileName" -Encoding Ascii
 
 $markerPath = $releaseInstaller + '.authenticode.json'
 $timestampCertificateSubject = $null
@@ -55,7 +62,7 @@ if ($null -ne $signature.TimeStamperCertificate) {
 }
 $marker = [ordered]@{
     schemaVersion = 1
-    fileName = 'PixelCompanion-Installer.exe'
+    fileName = $releaseFileName
     version = $Version
     sha256 = $hashValue
     signerSubject = $signature.SignerCertificate.Subject

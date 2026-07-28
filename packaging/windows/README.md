@@ -5,10 +5,11 @@ The Windows package is a per-user Inno Setup installer for Windows 10/11 x64. It
 Build it from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Yaroro
 ```
 
-The installer and its build checksum are written to `artifacts/windows/installer/`. The build checksum ends in `.unsigned.sha256`.
+The Standard installer is written to `artifacts/windows/standard/installer/`; the for Yaroro installer is written to `artifacts/windows/yaroro/installer/`. Build checksums end in `.unsigned.sha256`.
 
 Installed components:
 
@@ -19,6 +20,6 @@ Installed components:
 - Start menu shortcuts and uninstaller;
 - optional desktop shortcut and login auto-start entry.
 
-User data under `%LOCALAPPDATA%\PixelCompanion` is deliberately retained during uninstall.
+Standard user data under `%LOCALAPPDATA%\PixelCompanion` and for Yaroro data under `%LOCALAPPDATA%\PixelCompanion-Yaroro` are deliberately retained during uninstall.
 
 Current public builds are unsigned, so Windows SmartScreen may warn about an unknown publisher. The release workflow smoke-tests the installer, confirms that it is unsigned, and publishes a final `.sha256` file plus an unsigned-installer notice. See [the release process](../../docs/releasing.md) for details and the future signed-release path.

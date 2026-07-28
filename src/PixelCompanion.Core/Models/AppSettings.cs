@@ -1,3 +1,5 @@
+using PixelCompanion.Core.Services;
+
 namespace PixelCompanion.Core.Models;
 
 public enum MovementSpeed { VerySlow, Slow, Normal, Fast, Custom }
@@ -10,7 +12,7 @@ public sealed record AppSettings
 {
     public int SchemaVersion { get; init; } = 2;
     public string Language { get; init; } = "auto";
-    public string ActiveCharacterId { get; init; } = "yaroro";
+    public string ActiveCharacterId { get; init; } = ProductEditionInfo.DefaultCharacterId;
     public bool CharacterVisible { get; init; } = true;
     public bool BehaviorPaused { get; init; }
     public bool AlwaysOnTop { get; init; } = true;

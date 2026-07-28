@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32;
 using PixelCompanion.Core.Models;
+using PixelCompanion.Core.Services;
 
 namespace PixelCompanion.Desktop;
 
@@ -142,11 +143,11 @@ public sealed class WindowsDesktopIntegration : IDesktopIntegration
             {
                 var executable = Environment.ProcessPath;
                 if (string.IsNullOrWhiteSpace(executable)) return false;
-                key.SetValue("PixelCompanion", $"\"{executable}\"");
+                key.SetValue(ProductEditionInfo.AutoStartValueName, $"\"{executable}\"");
             }
             else
             {
-                key.DeleteValue("PixelCompanion", false);
+                key.DeleteValue(ProductEditionInfo.AutoStartValueName, false);
             }
             return true;
         }

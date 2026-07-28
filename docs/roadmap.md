@@ -34,11 +34,21 @@
 - Preserve the existing right-facing convention for user-supplied character images.
 - Add regression coverage for both source-facing directions and both movement directions.
 
+## 0.4.0 separate editions and in-app dialogue editing
+
+- Publish the Standard cat edition and `for Yaroro` edition as separate Windows installers in the same release.
+- Give each edition its own executable names, install directory, startup entry, user-data directory, bundled character, and update asset.
+- Preserve existing Yaroro data by copying the legacy data directory once when the separated edition first starts.
+- Add **Edit dialogues...** to the character right-click menu instead of creating another standalone program.
+- Edit Korean and English click, feed, play, and sleep dialogue with probability, affection, cooldown, preview, safe saving, and backups.
+- Apply saved dialogue immediately and expand the localized `{time}` variable.
+- Build and smoke-test both editions in GitHub Actions.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.
-2. Expand the character editor with sprite-sheet slicing, frame ordering/FPS preview, anchors, hit boxes, props, dialogue conditions, import/export, and migration-aware pack validation.
-3. Add timer, focus/rest timer, stopwatch, notes, notifications, and richer pet interactions.
+2. Add timer, focus/rest timer, stopwatch, notes, notifications, and richer pet interactions.
+3. Expand the character editor with sprite-sheet slicing, frame ordering/FPS preview, anchors, hit boxes, props, dialogue conditions, import/export, and migration-aware pack validation.
 4. Implement Windows and macOS adapters for idle time, system load, and notifications.
 5. Implement best-effort media and internal-battery adapters, with capability-gated UI and no audio capture.
 6. Add macOS packaging, signing guidance, performance budgets, accessibility review, and GitHub release automation.

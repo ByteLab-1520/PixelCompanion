@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory)]
     [string] $InstallerPath,
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.3.3',
+    [string] $Version = '0.4.0',
+    [ValidateSet('Standard', 'Yaroro')]
+    [string] $Edition = 'Standard',
     [string] $OutputDirectory
 )
 
@@ -38,12 +40,17 @@ if (-not $output.StartsWith($artifactsRoot, [System.StringComparison]::OrdinalIg
 }
 
 New-Item -ItemType Directory -Path $output -Force | Out-Null
-$releaseInstaller = Join-Path $output 'PixelCompanion-Installer.exe'
+$releaseFileName = if ($Edition -eq 'Yaroro') {
+    'PixelCompanion-Yaroro-Installer.exe'
+} else {
+    'PixelCompanion-Installer.exe'
+}
+$releaseInstaller = Join-Path $output $releaseFileName
 Copy-Item -LiteralPath $source -Destination $releaseInstaller -Force
 
 $hashValue = (Get-FileHash -LiteralPath $releaseInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
 $checksumPath = $releaseInstaller + '.sha256'
-Set-Content -LiteralPath $checksumPath -Value "$hashValue  PixelCompanion-Installer.exe" -Encoding Ascii
+Set-Content -LiteralPath $checksumPath -Value "$hashValue  $releaseFileName" -Encoding Ascii
 
 $noticePath = Join-Path $output 'UNSIGNED_INSTALLER.txt'
 $notice = @'
@@ -55,8 +62,7 @@ Windows SmartScreen may display an unknown publisher warning.
 Download Pixel Companion only from:
 https://github.com/ByteLab-1520/PixelCompanion/releases
 
-Verify PixelCompanion-Installer.exe against the accompanying
-PixelCompanion-Installer.exe.sha256 file before running it.
+Verify each installer against its accompanying .sha256 file before running it.
 '@
 Set-Content -LiteralPath $noticePath -Value $notice -Encoding Ascii
 

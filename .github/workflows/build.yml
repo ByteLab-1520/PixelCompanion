@@ -9,15 +9,16 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
+        edition: [Standard, Yaroro]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet restore PixelCompanion.slnx
-      - run: dotnet build PixelCompanion.slnx -c Release --no-restore
-      - run: dotnet run --project tests/PixelCompanion.Core.Tests -c Release --no-build
+      - run: dotnet restore PixelCompanion.slnx -p:ProductEdition=${{ matrix.edition }}
+      - run: dotnet build PixelCompanion.slnx -c Release --no-restore -p:ProductEdition=${{ matrix.edition }}
+      - run: dotnet run --project tests/PixelCompanion.Core.Tests -c Release --no-build -p:ProductEdition=${{ matrix.edition }}
 
   windows-installer:
     runs-on: windows-latest
@@ -28,14 +29,21 @@ jobs:
           dotnet-version: 10.0.x
       - run: dotnet restore PixelCompanion.slnx
       - run: choco install innosetup --yes --no-progress
-      - shell: powershell
-        run: .\scripts\Build-WindowsInstaller.ps1
-      - name: Smoke-test Windows installer
+      - name: Build Standard installer
         shell: powershell
-        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.3.3
+        run: .\scripts\Build-WindowsInstaller.ps1 -Edition Standard
+      - name: Build for Yaroro installer
+        shell: powershell
+        run: .\scripts\Build-WindowsInstaller.ps1 -Edition Yaroro
+      - name: Smoke-test Standard installer
+        shell: powershell
+        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\standard\installer\PixelCompanion-Installer.exe -Version 0.4.0 -Edition Standard
+      - name: Smoke-test for Yaroro installer
+        shell: powershell
+        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe -Version 0.4.0 -Edition Yaroro
       - uses: actions/upload-artifact@v4
         with:
-          name: PixelCompanion-Windows-Installer
+          name: PixelCompanion-Windows-Installers
           path: |
-            artifacts/windows/installer/*.exe
-            artifacts/windows/installer/*.sha256
+            artifacts/windows/*/installer/*.exe
+            artifacts/windows/*/installer/*.sha256

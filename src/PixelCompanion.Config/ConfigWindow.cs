@@ -42,7 +42,7 @@ public sealed class ConfigWindow : Window
 
     public ConfigWindow()
     {
-        Title = "Pixel Companion — Advanced Settings";
+        Title = $"{ProductEditionInfo.DisplayName} — Advanced Settings";
         Width = 820;
         Height = 600;
         MinWidth = 680;
@@ -53,7 +53,7 @@ public sealed class ConfigWindow : Window
 
         var header = new TextBlock
         {
-            Text = "Pixel Companion",
+            Text = ProductEditionInfo.DisplayName,
             FontSize = 24,
             FontWeight = FontWeight.SemiBold,
             Margin = new Thickness(0, 0, 0, 14)
@@ -388,7 +388,7 @@ public sealed class ConfigWindow : Window
 
     private static string? FindBundledCharacterRoot()
     {
-        var candidate = Path.Combine(AppContext.BaseDirectory, "characters", "Yaroro");
+        var candidate = Path.Combine(AppContext.BaseDirectory, "characters", ProductEditionInfo.DefaultCharacterFolder);
         return Directory.Exists(candidate) ? candidate : null;
     }
 

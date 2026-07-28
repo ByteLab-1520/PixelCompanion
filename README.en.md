@@ -26,6 +26,18 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
 
+## What's new in v0.4.0
+
+The Standard and `for Yaroro` editions are now separate products published in the same release. They use different executable names, install directories, startup entries, and user-data directories, so both can be installed side by side.
+
+- Standard: `PixelCompanion-Installer.exe`
+- for Yaroro: `PixelCompanion-Yaroro-Installer.exe`
+- Right-click the character and choose **Edit dialogues...** to edit dialogue inside the main app.
+- Edit Korean and English lines for click, feed, play, and sleep reactions.
+- Set output probability, minimum affection, and cooldown per line, then preview it in the speech bubble.
+- Saved lines take effect immediately and use atomic saving with backups.
+- `{time}` expands to the current localized time; unsupported variables remain visible safely.
+
 ## v0.3.3 for Yaroro Hot Fix
 
 - Fixes Yaroro walking while visually facing the opposite direction.
@@ -107,16 +119,18 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Install Inno Setup 6, then run this command from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Yaroro
 ```
 
-The single installer executable is written to `artifacts/windows/installer/`. See the [Windows packaging guide](packaging/windows/README.md) for details.
+The installers are written to `artifacts/windows/standard/installer/` and `artifacts/windows/yaroro/installer/`. See the [Windows packaging guide](packaging/windows/README.md) for details.
 
 Public releases are built from version tags and include a final SHA-256 checksum. v0.2.1 is explicitly distributed as an unsigned installer, so the app opens its official GitHub Release page instead of installing it automatically. See the [release process](docs/releasing.md) for the current unsigned flow and the future signed-release path.
 
 ## User data
 
 - Windows: `%LOCALAPPDATA%\PixelCompanion`
+- Windows, for Yaroro: `%LOCALAPPDATA%\PixelCompanion-Yaroro`
 - macOS: `~/Library/Application Support/PixelCompanion`
 
 See [architecture.md](docs/architecture.md) and [roadmap.md](docs/roadmap.md) for implementation boundaries and remaining phases.
