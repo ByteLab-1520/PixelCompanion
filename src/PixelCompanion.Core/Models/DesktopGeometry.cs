@@ -16,7 +16,9 @@ public sealed record MovementSurface(
     MovementSurfaceKind Kind,
     DesktopRect Bounds,
     long NativeHandle = 0,
-    string ProcessName = "")
+    string ProcessName = "",
+    int ZOrder = int.MaxValue,
+    bool IsWalkable = true)
 {
     public bool IsValidFor(double petWidth) => Bounds.IsValid && Bounds.Width >= petWidth;
 
@@ -25,6 +27,13 @@ public sealed record MovementSurface(
 }
 
 public readonly record struct SurfacePlacement(string SurfaceId, double X, double Y);
+
+public readonly record struct WalkableRange(double MinimumX, double MaximumX)
+{
+    public bool IsValid => MaximumX >= MinimumX;
+    public bool Contains(double x, double tolerance = 0.5) =>
+        x >= MinimumX - tolerance && x <= MaximumX + tolerance;
+}
 
 public static class MovementGeometry
 {
@@ -71,6 +80,83 @@ public static class MovementGeometry
 
     public static double HorizontalScale(bool movingLeft, bool frameFacesLeft) =>
         movingLeft == frameFacesLeft ? 1 : -1;
+
+    public static IReadOnlyList<WalkableRange> GetWalkableRanges(
+        MovementSurface surface,
+        IEnumerable<MovementSurface> windowSurfaces,
+        double petWidth)
+    {
+        if (!surface.IsValidFor(petWidth) || petWidth <= 0)
+            return [];
+
+        if (surface.Kind != MovementSurfaceKind.WindowTop)
+            return [new WalkableRange(surface.Bounds.X, surface.Bounds.Right - petWidth)];
+
+        var clearSegments = new List<(double Start, double End)>
+        {
+            (surface.Bounds.X, surface.Bounds.Right)
+        };
+        foreach (var obstacle in windowSurfaces.Where(candidate =>
+                     candidate.Kind == MovementSurfaceKind.WindowTop &&
+                     candidate.NativeHandle != surface.NativeHandle &&
+                     candidate.ZOrder < surface.ZOrder &&
+                     candidate.Bounds.Y <= surface.Bounds.Y &&
+                     candidate.Bounds.Bottom > surface.Bounds.Y &&
+                     candidate.Bounds.Right > surface.Bounds.X &&
+                     candidate.Bounds.X < surface.Bounds.Right))
+        {
+            const double collisionMargin = 2;
+            var blockedStart = Math.Max(surface.Bounds.X, obstacle.Bounds.X - collisionMargin);
+            var blockedEnd = Math.Min(surface.Bounds.Right, obstacle.Bounds.Right + collisionMargin);
+            var next = new List<(double Start, double End)>();
+            foreach (var segment in clearSegments)
+            {
+                if (blockedEnd <= segment.Start || blockedStart >= segment.End)
+                {
+                    next.Add(segment);
+                    continue;
+                }
+
+                if (blockedStart > segment.Start)
+                    next.Add((segment.Start, Math.Min(blockedStart, segment.End)));
+                if (blockedEnd < segment.End)
+                    next.Add((Math.Max(blockedEnd, segment.Start), segment.End));
+            }
+            clearSegments = next;
+            if (clearSegments.Count == 0) break;
+        }
+
+        return clearSegments
+            .Where(segment => segment.End - segment.Start >= petWidth)
+            .Select(segment => new WalkableRange(segment.Start, segment.End - petWidth))
+            .ToArray();
+    }
+
+    public static WalkableRange? FindContainingRange(
+        IEnumerable<WalkableRange> ranges,
+        double x)
+    {
+        foreach (var range in ranges)
+            if (range.IsValid && range.Contains(x))
+                return range;
+        return null;
+    }
+
+    public static WalkableRange? FindNearestRange(
+        IEnumerable<WalkableRange> ranges,
+        double x)
+    {
+        var ordered = ranges
+            .Where(range => range.IsValid)
+            .OrderBy(range => x < range.MinimumX
+                ? range.MinimumX - x
+                : x > range.MaximumX
+                    ? x - range.MaximumX
+                    : 0);
+        foreach (var range in ordered)
+            return range;
+        return null;
+    }
 
     private static double DistanceSquared(MovementSurface surface, DesktopPoint point)
     {

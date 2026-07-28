@@ -26,6 +26,14 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
 
+## v0.4.1 window-obstacle Hot Fix
+
+- A foreground window covering part of the supporting title bar now becomes a collision wall.
+- The companion stops at the edge, turns around, and continues walking on the unobstructed part of the same window.
+- If a foreground window moves into the companion, the companion is moved to the nearest safe side and turns away.
+- Windows behind the supporting window, and windows that do not cross its title-bar line, are not treated as obstacles.
+- Existing surface recovery is used only when no space remains large enough for the companion.
+
 ## What's new in v0.4.0
 
 The Standard and `for Yaroro` editions are now separate products published in the same release. They use different executable names, install directories, startup entries, and user-data directories, so both can be installed side by side.
@@ -119,8 +127,8 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Install Inno Setup 6, then run this command from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Standard
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.1 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.1 -Edition Yaroro
 ```
 
 The installers are written to `artifacts/windows/standard/installer/` and `artifacts/windows/yaroro/installer/`. See the [Windows packaging guide](packaging/windows/README.md) for details.

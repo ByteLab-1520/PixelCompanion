@@ -19,6 +19,7 @@ The Standard and `for Yaroro` editions are compile-time product flavors, not run
 - `IPlatformServices` is the capability boundary for media, battery, idle time, fullscreen, load, auto-start, and notifications. Unsupported APIs return unavailable snapshots rather than failing the application.
 - `IDesktopIntegration` is the runtime boundary for read-only program-window discovery, full-screen detection, click-through, the click-through recovery hotkey, and login startup. The Windows adapter only reads target-window metadata; it never sends target windows move, resize, minimize, or input commands.
 - `MovementGeometry` keeps monitor, custom-region, and window-top placement calculations independent from Avalonia and Win32 so clamping, DPI-aware placement, and recovery rules can be tested without opening a desktop window.
+- Windows surface discovery preserves foreground-to-background Z order. `MovementGeometry` subtracts the portions covered by foreground windows from a supporting title bar and returns pet-width-aware free ranges; the runtime treats their edges as horizontal collision walls.
 
 ## Runtime timing
 

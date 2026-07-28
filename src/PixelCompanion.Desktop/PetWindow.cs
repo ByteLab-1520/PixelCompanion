@@ -74,6 +74,7 @@ public sealed class PetWindow : Window
     private long _specialAnimationUntilMs;
     private int _specialAnimationFrame;
     private bool _dialogueEditorOpen;
+    private int _obstacleTurnDirection;
 
     public bool BehaviorPaused => _settings.BehaviorPaused;
     public bool ClickThrough => _settings.ClickThrough;
@@ -277,17 +278,21 @@ public sealed class PetWindow : Window
                 var ground = surface.Kind == MovementSurfaceKind.WindowTop
                     ? surface.Bounds.Y
                     : surface.Bounds.Bottom;
-                return ground >= petBottom - 48;
+                return ground >= petBottom - 48 && GetWalkableRanges(surface).Count > 0;
             })
             .ToArray();
         var surface = MovementGeometry.FindNearest(
             candidates,
             new DesktopPoint(Position.X + (currentPetWidth / 2), petBottom),
             currentPetWidth);
+        var landingRange = surface is null
+            ? null
+            : MovementGeometry.FindNearestRange(GetWalkableRanges(surface), Position.X);
         if (surface is not null &&
+            landingRange is not null &&
             MovementGeometry.TryPlace(
                 surface,
-                Position.X,
+                Math.Clamp(Position.X, landingRange.Value.MinimumX, landingRange.Value.MaximumX),
                 PetPixelWidth(surface),
                 PetPixelHeight(surface),
                 out var placement))
@@ -342,6 +347,14 @@ public sealed class PetWindow : Window
         var distance = Math.Sqrt(dx * dx + dy * dy);
         if (distance < 4)
         {
+            if (_obstacleTurnDirection != 0 &&
+                FindSurface(_currentSurfaceId) is { } obstacleSurface)
+            {
+                var direction = _obstacleTurnDirection;
+                _obstacleTurnDirection = 0;
+                if (ChooseTargetAwayFromObstacle(obstacleSurface, direction))
+                    return;
+            }
             _walking = false;
             _nextDecisionMs = now + Random.Shared.Next(5000, 11000);
             return;
@@ -493,7 +506,10 @@ public sealed class PetWindow : Window
 
     private void ChooseTarget()
     {
-        var available = GetAvailableSurfaces().Where(surface => surface.IsValidFor(PetPixelWidth(surface))).ToArray();
+        _obstacleTurnDirection = 0;
+        var available = GetAvailableSurfaces()
+            .Where(surface => GetWalkableRanges(surface).Count > 0)
+            .ToArray();
         if (available.Length == 0) return;
 
         var current = FindSurface(_currentSurfaceId);
@@ -505,17 +521,22 @@ public sealed class PetWindow : Window
             _ = TransitionToSurfaceAsync(surface);
             return;
         }
-        var surfacePetWidth = PetPixelWidth(surface);
-        var travel = Math.Max(0, surface.Bounds.Width - surfacePetWidth);
-        _targetRelativeX = Random.Shared.NextDouble();
-        var requestedX = surface.Bounds.X + (travel * _targetRelativeX);
+        var ranges = GetWalkableRanges(surface);
+        var range = current?.Id == surface.Id
+            ? MovementGeometry.FindContainingRange(ranges, Position.X) ??
+              MovementGeometry.FindNearestRange(ranges, Position.X)
+            : ranges[Random.Shared.Next(ranges.Count)];
+        if (range is null) return;
+        var requestedX = range.Value.MinimumX +
+                         (Random.Shared.NextDouble() * (range.Value.MaximumX - range.Value.MinimumX));
         if (!MovementGeometry.TryPlace(
                 surface,
                 requestedX,
-                surfacePetWidth,
+                PetPixelWidth(surface),
                 PetPixelHeight(surface),
                 out var placement)) return;
         _currentSurfaceId = surface.Id;
+        _targetRelativeX = MovementGeometry.RelativeX(surface, placement.X, PetPixelWidth(surface));
         _target = new PixelPoint((int)Math.Round(placement.X), (int)Math.Round(placement.Y));
     }
 
@@ -529,8 +550,11 @@ public sealed class PetWindow : Window
             Hide();
             await Task.Delay(220);
             var petWidth = PetPixelWidth(surface);
+            var ranges = GetWalkableRanges(surface);
+            if (ranges.Count == 0) return;
             var enterFromLeft = Random.Shared.Next(2) == 0;
-            var edgeX = enterFromLeft ? surface.Bounds.X : surface.Bounds.Right - petWidth;
+            var range = enterFromLeft ? ranges[0] : ranges[^1];
+            var edgeX = enterFromLeft ? range.MinimumX : range.MaximumX;
             if (!MovementGeometry.TryPlace(
                     surface,
                     edgeX,
@@ -580,13 +604,66 @@ public sealed class PetWindow : Window
             return;
         }
 
+        var petWidth = PetPixelWidth(current);
+        var ranges = GetWalkableRanges(current);
+        if (ranges.Count == 0)
+        {
+            RecoverToNearestSurface();
+            return;
+        }
+
+        var currentRequestedX = MovementGeometry.ResolveRelativeX(current, _surfaceRelativeX, petWidth);
+        var currentRange = MovementGeometry.FindContainingRange(ranges, currentRequestedX);
+        if (currentRange is null)
+        {
+            var nearestRange = MovementGeometry.FindNearestRange(ranges, currentRequestedX);
+            if (nearestRange is null)
+            {
+                RecoverToNearestSurface();
+                return;
+            }
+
+            var safeX = Math.Clamp(currentRequestedX, nearestRange.Value.MinimumX, nearestRange.Value.MaximumX);
+            if (!MovementGeometry.TryPlace(
+                    current,
+                    safeX,
+                    petWidth,
+                    PetPixelHeight(current),
+                    out var safePlacement))
+            {
+                RecoverToNearestSurface();
+                return;
+            }
+
+            Position = new PixelPoint((int)Math.Round(safePlacement.X), (int)Math.Round(safePlacement.Y));
+            _surfaceRelativeX = MovementGeometry.RelativeX(current, safePlacement.X, petWidth);
+            var direction = safeX <= currentRequestedX ? -1 : 1;
+            _obstacleTurnDirection = 0;
+            if (!ChooseTargetAwayFromObstacle(current, direction))
+            {
+                _walking = false;
+                _nextDecisionMs = _clock.ElapsedMilliseconds + 1200;
+            }
+            return;
+        }
+
         var requestedX = _walking
-            ? MovementGeometry.ResolveRelativeX(current, _targetRelativeX, PetPixelWidth(current))
-            : MovementGeometry.ResolveRelativeX(current, _surfaceRelativeX, PetPixelWidth(current));
+            ? MovementGeometry.ResolveRelativeX(current, _targetRelativeX, petWidth)
+            : currentRequestedX;
+        var clampedX = Math.Clamp(
+            requestedX,
+            currentRange.Value.MinimumX,
+            currentRange.Value.MaximumX);
+        if (_walking)
+            _obstacleTurnDirection = Math.Abs(clampedX - requestedX) > 0.5
+                ? requestedX > clampedX ? -1 : 1
+                : 0;
+        else
+            _obstacleTurnDirection = 0;
         if (!MovementGeometry.TryPlace(
                 current,
-                requestedX,
-                PetPixelWidth(current),
+                clampedX,
+                petWidth,
                 PetPixelHeight(current),
                 out var placement))
         {
@@ -668,7 +745,7 @@ public sealed class PetWindow : Window
         if (_settings.MovementSurfaceMode is MovementSurfaceMode.DesktopOnly or MovementSurfaceMode.DesktopAndWindows)
             surfaces.AddRange(GetDesktopSurfaces());
         if (_settings.MovementSurfaceMode is MovementSurfaceMode.WindowsOnly or MovementSurfaceMode.DesktopAndWindows)
-            surfaces.AddRange(_windowSurfaces);
+            surfaces.AddRange(_windowSurfaces.Where(surface => surface.IsWalkable));
 
         if (surfaces.Count == 0)
         {
@@ -717,6 +794,40 @@ public sealed class PetWindow : Window
         return GetAvailableSurfaces().FirstOrDefault(surface => surface.Id == id);
     }
 
+    private IReadOnlyList<WalkableRange> GetWalkableRanges(MovementSurface surface) =>
+        MovementGeometry.GetWalkableRanges(surface, _windowSurfaces, PetPixelWidth(surface));
+
+    private bool ChooseTargetAwayFromObstacle(MovementSurface surface, int direction)
+    {
+        var ranges = GetWalkableRanges(surface);
+        var range = MovementGeometry.FindContainingRange(ranges, Position.X) ??
+                    MovementGeometry.FindNearestRange(ranges, Position.X);
+        if (range is null) return false;
+
+        const double minimumTurnDistance = 24;
+        var currentX = Math.Clamp(Position.X, range.Value.MinimumX, range.Value.MaximumX);
+        double targetX;
+        if (direction < 0)
+        {
+            if (currentX - range.Value.MinimumX < minimumTurnDistance) return false;
+            targetX = range.Value.MinimumX +
+                      Random.Shared.NextDouble() * Math.Max(0, currentX - range.Value.MinimumX - minimumTurnDistance);
+        }
+        else
+        {
+            if (range.Value.MaximumX - currentX < minimumTurnDistance) return false;
+            targetX = currentX + minimumTurnDistance +
+                      Random.Shared.NextDouble() * Math.Max(0, range.Value.MaximumX - currentX - minimumTurnDistance);
+        }
+
+        _targetRelativeX = MovementGeometry.RelativeX(surface, targetX, PetPixelWidth(surface));
+        _target = new PixelPoint(
+            (int)Math.Round(targetX),
+            (int)Math.Round(surface.PetTop(PetPixelHeight(surface))));
+        _walking = true;
+        return true;
+    }
+
     private void AttachToSurface(MovementSurface surface, double x)
     {
         _currentSurfaceId = surface.Id;
@@ -727,7 +838,9 @@ public sealed class PetWindow : Window
     private void RecoverToNearestSurface()
     {
         if (_recovering) return;
-        var surfaces = GetAvailableSurfaces();
+        var surfaces = GetAvailableSurfaces()
+            .Where(surface => GetWalkableRanges(surface).Count > 0)
+            .ToArray();
         var currentPetWidth = PetPixelWidth();
         var petBottom = Position.Y + PetPixelHeight();
         var below = surfaces.Where(surface =>
@@ -742,9 +855,11 @@ public sealed class PetWindow : Window
             new DesktopPoint(Position.X + (currentPetWidth / 2), Position.Y + PetPixelHeight()),
             currentPetWidth);
         if (nearest is null) return;
-        if (!MovementGeometry.TryPlace(
+        var landingRange = MovementGeometry.FindNearestRange(GetWalkableRanges(nearest), Position.X);
+        if (landingRange is null ||
+            !MovementGeometry.TryPlace(
                 nearest,
-                Position.X,
+                Math.Clamp(Position.X, landingRange.Value.MinimumX, landingRange.Value.MaximumX),
                 PetPixelWidth(nearest),
                 PetPixelHeight(nearest),
                 out var placement)) return;

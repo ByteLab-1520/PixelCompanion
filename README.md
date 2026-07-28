@@ -2,14 +2,14 @@
 
 ```text
 ┌──────────────────────────────────────┐
-│      PIXEL COMPANION  v0.4.0         │
+│      PIXEL COMPANION  v0.4.1         │
 │       작은 친구, 조용한 동행         │
 └──────────────────────────────────────┘
 ```
 
 **작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
 
-[![Version](https://img.shields.io/badge/version-0.4.0-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.4.1-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
@@ -63,6 +63,16 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 - 한국어 번역이 없으면 영어를, 영어도 없으면 번역 키를 표시해 프로그램이 멈추지 않게 합니다.
 
 아직 모든 계획이 완성된 것은 아닙니다. 타이머, 미디어 반응, 배터리 반응과 세밀한 캐릭터 제작 도구는 아래 로드맵에 따라 차례로 추가할 예정입니다.
+
+---
+
+## ░░ v0.4.1 창 위 장애물 Hot Fix
+
+- 캐릭터가 프로그램 창 위를 걷는 동안 더 앞쪽 창이 길을 가리면, 가려진 구간을 벽으로 인식합니다.
+- 벽 가장자리에서 멈춘 뒤 반대 방향으로 돌아서 같은 창의 빈 구간을 계속 걷습니다.
+- 앞쪽 창이 캐릭터 쪽으로 움직이면 가장 가까운 안전한 쪽으로 밀려난 뒤 방향을 바꿉니다.
+- 뒤쪽에 있는 창이나 제목 표시줄 높이를 실제로 가리지 않는 창은 장애물로 잘못 판단하지 않습니다.
+- 설 수 있는 빈 공간이 완전히 사라졌을 때만 기존의 안전한 발판 복구 동작을 사용합니다.
 
 ---
 
@@ -251,8 +261,8 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Standard
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.0 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.1 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.1 -Edition Yaroro
 ```
 
 서명 전 설치 파일은 다음 폴더에 만들어집니다.
@@ -279,6 +289,7 @@ artifacts/windows/yaroro/installer/
 | `v0.3.2` | Yaroro 특별 빌드 | 야로로 기본 캐릭터, 걷기 3프레임, 사람의 밥 식사 모션, 잠자기 모션과 별도 자산 권리 고지 |
 | `v0.3.3` | Yaroro Hot Fix | 야로로의 걷는 방향을 이동 방향과 일치시키고 사용자 지정 캐릭터의 기존 방향 규칙은 유지 |
 | `v0.4.0` | 두 에디션과 내 대사 | 기본판·for Yaroro판 동시 제공, 독립 설치·데이터, 우클릭 대사 편집과 안전 저장 |
+| `v0.4.1` | 창 위 장애물 Hot Fix | 앞쪽 창의 겹친 구간을 벽으로 인식하고 충돌하면 같은 발판에서 방향 전환 |
 | `v0.5.0` | 함께 돌보는 재미 | 상태값 변화, 먹이·청소·쓰다듬기·수면, 타이머와 집중 타이머 |
 | `v0.6.0` | Windows 상황 인식 | 자리 비움·복귀, 전체 화면, 시스템 부하, 배터리·충전, 음악·영상 반응 |
 | `v0.7.0` | 캐릭터 제작 도구 | 스프라이트 시트, 프레임 순서와 FPS, 기준점, 히트박스, 소품과 조건부 대사 |

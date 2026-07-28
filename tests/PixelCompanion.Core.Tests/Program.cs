@@ -282,6 +282,46 @@ static Task TestMovementGeometry()
         "right-facing frame should not flip while moving right");
     Assert(MovementGeometry.HorizontalScale(movingLeft: true, frameFacesLeft: false) == -1,
         "right-facing frame should flip while moving left");
+
+    var support = new MovementSurface(
+        "window:support",
+        MovementSurfaceKind.WindowTop,
+        new DesktopRect(100, 300, 800, 500),
+        NativeHandle: 10,
+        ZOrder: 5);
+    var frontObstacle = new MovementSurface(
+        "window:front",
+        MovementSurfaceKind.WindowTop,
+        new DesktopRect(400, 200, 220, 300),
+        NativeHandle: 20,
+        ZOrder: 2,
+        IsWalkable: false);
+    var behindWindow = new MovementSurface(
+        "window:behind",
+        MovementSurfaceKind.WindowTop,
+        new DesktopRect(200, 200, 120, 300),
+        NativeHandle: 30,
+        ZOrder: 9);
+    var ranges = MovementGeometry.GetWalkableRanges(
+        support,
+        [support, frontObstacle, behindWindow],
+        petWidth: 100);
+    Assert(ranges.Count == 2, "a front window should split the support window into two walkable ranges");
+    Assert(ranges[0] == new WalkableRange(100, 298), "left collision wall was calculated incorrectly");
+    Assert(ranges[1] == new WalkableRange(622, 800), "right collision wall was calculated incorrectly");
+    Assert(MovementGeometry.FindContainingRange(ranges, 250) == ranges[0],
+        "pet position was not kept in its current free range");
+    Assert(MovementGeometry.FindNearestRange(ranges, 500) == ranges[1],
+        "an overlapped pet was not moved to the nearest free side");
+
+    var nonCovering = frontObstacle with
+    {
+        Id = "window:above",
+        Bounds = new DesktopRect(400, 50, 220, 100)
+    };
+    var unobstructed = MovementGeometry.GetWalkableRanges(support, [support, nonCovering], 100);
+    Assert(unobstructed.SequenceEqual([new WalkableRange(100, 800)]),
+        "a window that does not cover the title-bar line became a false obstacle");
     return Task.CompletedTask;
 }
 
@@ -309,7 +349,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.4.0";
+    const string version = "0.4.1";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

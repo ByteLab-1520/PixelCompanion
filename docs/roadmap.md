@@ -44,6 +44,14 @@
 - Apply saved dialogue immediately and expand the localized `{time}` variable.
 - Build and smoke-test both editions in GitHub Actions.
 
+## 0.4.1 window-obstacle Hot Fix
+
+- Preserve native window Z order while discovering candidate walking surfaces.
+- Treat only the foreground windows that cover the supporting title-bar line as horizontal collision walls.
+- Keep the companion inside the current unobstructed range, turn it around at a wall, and push it to the nearest safe side when a window moves into it.
+- Ignore windows behind the supporting window and windows that do not cross its top edge.
+- Fall back to normal surface recovery only when no unobstructed range can fit the companion.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.

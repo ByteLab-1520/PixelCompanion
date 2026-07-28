@@ -48,8 +48,10 @@ public sealed class WindowsDesktopIntegration : IDesktopIntegration
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var ownProcessId = (uint)Environment.ProcessId;
         var surfaces = new List<MovementSurface>();
+        var zOrder = 0;
         _ = EnumWindows((window, _) =>
         {
+            var currentZOrder = zOrder++;
             if (!IsWindowVisible(window) || IsIconic(window) || GetWindow(window, GwOwner) != nint.Zero)
                 return true;
 
@@ -70,8 +72,7 @@ public sealed class WindowsDesktopIntegration : IDesktopIntegration
                 return true;
 
             var processName = ReadProcessName(processId);
-            if (excluded.Contains(NormalizeProcessName(processName)) ||
-                processName.StartsWith("PixelCompanion", StringComparison.OrdinalIgnoreCase))
+            if (processName.StartsWith("PixelCompanion", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             if (!TryGetWindowBounds(window, out var bounds) || bounds.Width < 220 || bounds.Height < 120)
@@ -82,7 +83,9 @@ public sealed class WindowsDesktopIntegration : IDesktopIntegration
                 MovementSurfaceKind.WindowTop,
                 bounds,
                 window.ToInt64(),
-                processName));
+                processName,
+                currentZOrder,
+                !excluded.Contains(NormalizeProcessName(processName))));
             return true;
         }, nint.Zero);
 
