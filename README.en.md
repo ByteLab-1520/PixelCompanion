@@ -26,6 +26,13 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
 
+## v0.3.3 for Yaroro Hot Fix
+
+- Fixes Yaroro walking while visually facing the opposite direction.
+- Keeps the original left-facing artwork while moving left and flips it only while moving right.
+- Preserves the existing right-facing convention for user-supplied character images.
+- Adds regression coverage for all four movement-direction and source-facing combinations.
+
 ## v0.3.2 for Yaroro
 
 `v0.3.2 for Yaroro` is a special build that bundles Yaroro as the default companion.

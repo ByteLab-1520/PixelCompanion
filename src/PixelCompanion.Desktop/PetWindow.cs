@@ -41,6 +41,7 @@ public sealed class PetWindow : Window
     private long _lastMovementMs;
     private long _nextDecisionMs;
     private bool _bob;
+    private bool _currentFrameFacesLeft = true;
     private int _animationFrame;
     private int _profilePollTicks;
     private DateTime _lastProfileWriteUtc;
@@ -343,7 +344,9 @@ public sealed class PetWindow : Window
         Position = new PixelPoint((int)(Position.X + dx / distance * step), (int)(Position.Y + dy / distance * step));
         if (FindSurface(_currentSurfaceId) is { } current)
             _surfaceRelativeX = MovementGeometry.RelativeX(current, Position.X, PetPixelWidth(current));
-        _character.RenderTransform = new ScaleTransform(dx < 0 ? -1 : 1, 1);
+        var movingLeft = dx < 0;
+        _character.RenderTransform =
+            new ScaleTransform(MovementGeometry.HorizontalScale(movingLeft, _currentFrameFacesLeft), 1);
     }
 
     private void UpdateAnimation()
@@ -438,13 +441,23 @@ public sealed class PetWindow : Window
 
     private void SetCharacterFrame(CharacterImageSlot slot)
     {
-        if (_characterBitmaps.TryGetValue(slot, out var selected) ||
-            _characterBitmaps.TryGetValue(CharacterImageSlot.Default, out selected) ||
-            _bundledCharacters.TryGetValue(slot, out selected) ||
-            _bundledCharacters.TryGetValue(CharacterImageSlot.Default, out selected))
+        Bitmap? selected;
+        if (_characterBitmaps.TryGetValue(slot, out selected) ||
+            _characterBitmaps.TryGetValue(CharacterImageSlot.Default, out selected))
         {
-            if (!ReferenceEquals(_character.Source, selected)) _character.Source = selected;
+            _currentFrameFacesLeft = false;
         }
+        else if (_bundledCharacters.TryGetValue(slot, out selected) ||
+                 _bundledCharacters.TryGetValue(CharacterImageSlot.Default, out selected))
+        {
+            _currentFrameFacesLeft = true;
+        }
+        else
+        {
+            return;
+        }
+
+        if (!ReferenceEquals(_character.Source, selected)) _character.Source = selected;
     }
 
     private static string BundledAssetName(CharacterImageSlot slot) => slot switch

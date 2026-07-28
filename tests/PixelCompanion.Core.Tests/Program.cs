@@ -229,6 +229,14 @@ static Task TestMovementGeometry()
         new DesktopRect(-1920, 0, 1920, 1040));
     Assert(MovementGeometry.TryPlace(desktop, -2000, 120, 160, out var desktopPlacement), "valid desktop was rejected");
     Assert(desktopPlacement.X == -1920 && desktopPlacement.Y == 880, "desktop placement is incorrect");
+    Assert(MovementGeometry.HorizontalScale(movingLeft: true, frameFacesLeft: true) == 1,
+        "left-facing frame should not flip while moving left");
+    Assert(MovementGeometry.HorizontalScale(movingLeft: false, frameFacesLeft: true) == -1,
+        "left-facing frame should flip while moving right");
+    Assert(MovementGeometry.HorizontalScale(movingLeft: false, frameFacesLeft: false) == 1,
+        "right-facing frame should not flip while moving right");
+    Assert(MovementGeometry.HorizontalScale(movingLeft: true, frameFacesLeft: false) == -1,
+        "right-facing frame should flip while moving left");
     return Task.CompletedTask;
 }
 
@@ -256,7 +264,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.3.2";
+    const string version = "0.3.3";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

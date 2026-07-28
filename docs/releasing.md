@@ -17,9 +17,9 @@ The workflow stops without publishing if the tag version does not match, the tag
 Build and prepare the same files locally:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.3.2
-powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.3.2
-powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.3.2
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.3.3
+powershell -ExecutionPolicy Bypass -File .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.3.3
+powershell -ExecutionPolicy Bypass -File .\scripts\Prepare-UnsignedWindowsRelease.ps1 -InstallerPath .\artifacts\windows\installer\PixelCompanion-Installer.exe -Version 0.3.3
 ```
 
 The publishable files are written to `artifacts/windows/release/`.
