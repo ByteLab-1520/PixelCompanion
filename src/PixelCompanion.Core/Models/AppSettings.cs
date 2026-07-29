@@ -30,7 +30,7 @@ public sealed record AppSettings
     public RegionMode RegionMode { get; init; } = RegionMode.CurrentMonitor;
     public DisconnectedRegionPolicy DisconnectedRegionPolicy { get; init; } = DisconnectedRegionPolicy.StayInCurrent;
     public MovementSurfaceMode MovementSurfaceMode { get; init; } = MovementSurfaceMode.DesktopAndWindows;
-    public FullScreenBehavior FullScreenBehavior { get; init; } = FullScreenBehavior.Hide;
+    public FullScreenBehavior FullScreenBehavior { get; init; } = FullScreenBehavior.WaitAtEdge;
     public string[] ExcludedWindowProcesses { get; init; } = [];
 }
 

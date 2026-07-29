@@ -86,6 +86,8 @@ public sealed class App : Application
                 window.AutoStart ? "menu.disableAutoStart" : "menu.enableAutoStart",
                 window.ToggleAutoStart,
                 "Toggle startup at login"));
+            if (window.TimerRunning)
+                menu.Items.Add(TrayItem("menu.timer", window.ShowTimerStatus, "Timer"));
 
             var movement = new NativeMenu();
             movement.Items.Add(TrayItem(

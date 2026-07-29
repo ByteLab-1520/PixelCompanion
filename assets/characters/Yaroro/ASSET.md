@@ -7,3 +7,5 @@ The character and artwork are separate assets and are not covered by the reposit
 The eating animation depicts a human meal with rice and side dishes. It intentionally does not use pet food, kibble, or a feeding bowl.
 
 The Yaroro application icon under `assets/icons/` is a pixel-art derivative made from the same provided character reference and follows this asset notice.
+
+The v0.5.2 tail-propeller, falling, and stunned-landing frames are reference-guided derivative animation assets created specifically for this edition. They follow the same separate asset-rights notice and are not covered by the MIT software license.

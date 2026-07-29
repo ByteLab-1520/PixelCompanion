@@ -76,6 +76,11 @@ public sealed class DialogueEditorWindow : Window
         Maximum = CharacterDialogueService.MaximumCooldownSeconds,
         Increment = 5
     };
+    private readonly NumericUpDown _minimumHunger = ConditionValue();
+    private readonly NumericUpDown _minimumFatigue = ConditionValue();
+    private readonly NumericUpDown _maximumHappiness = ConditionValue();
+    private readonly NumericUpDown _startHour = HourValue();
+    private readonly NumericUpDown _endHour = HourValue();
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Dictionary<string, CharacterDialogueCatalog> _catalogs = new(StringComparer.Ordinal);
     private ObservableCollection<DialogueListItem> _visibleLines = [];
@@ -132,6 +137,11 @@ public sealed class DialogueEditorWindow : Window
         _probability.ValueChanged += (_, _) => UpdateSelectedLine();
         _minimumAffection.ValueChanged += (_, _) => UpdateSelectedLine();
         _cooldown.ValueChanged += (_, _) => UpdateSelectedLine();
+        _minimumHunger.ValueChanged += (_, _) => UpdateSelectedLine();
+        _minimumFatigue.ValueChanged += (_, _) => UpdateSelectedLine();
+        _maximumHappiness.ValueChanged += (_, _) => UpdateSelectedLine();
+        _startHour.ValueChanged += (_, _) => UpdateSelectedLine();
+        _endHour.ValueChanged += (_, _) => UpdateSelectedLine();
 
         Content = BuildContent();
         Opened += async (_, _) => await LoadAsync();
@@ -185,6 +195,17 @@ public sealed class DialogueEditorWindow : Window
                 Field(_localization.Get("dialogueEditor.probability"), _probability),
                 Field(_localization.Get("dialogueEditor.minimumAffection"), _minimumAffection),
                 Field(_localization.Get("dialogueEditor.cooldown"), _cooldown),
+                Field(_localization.Get("dialogueEditor.minimumHunger"), _minimumHunger),
+                Field(_localization.Get("dialogueEditor.minimumFatigue"), _minimumFatigue),
+                Field(_localization.Get("dialogueEditor.maximumHappiness"), _maximumHappiness),
+                Field(_localization.Get("dialogueEditor.startHour"), _startHour),
+                Field(_localization.Get("dialogueEditor.endHour"), _endHour),
+                new TextBlock
+                {
+                    Text = _localization.Get("dialogueEditor.conditionHint"),
+                    Foreground = Brushes.DimGray,
+                    TextWrapping = TextWrapping.Wrap
+                },
                 new TextBlock
                 {
                     Text = _localization.Get("dialogueEditor.variables"),
@@ -342,6 +363,11 @@ public sealed class DialogueEditorWindow : Window
                 _probability.Value = (decimal)(line.Probability * 100);
                 _minimumAffection.Value = (decimal)line.MinimumAffection;
                 _cooldown.Value = line.CooldownSeconds;
+                _minimumHunger.Value = line.MinimumHunger is { } hunger ? (decimal)hunger : -1;
+                _minimumFatigue.Value = line.MinimumFatigue is { } fatigue ? (decimal)fatigue : -1;
+                _maximumHappiness.Value = line.MaximumHappiness is { } happiness ? (decimal)happiness : -1;
+                _startHour.Value = line.StartHour ?? -1;
+                _endHour.Value = line.EndHour ?? -1;
             }
             else
             {
@@ -349,6 +375,11 @@ public sealed class DialogueEditorWindow : Window
                 _probability.Value = 100;
                 _minimumAffection.Value = 0;
                 _cooldown.Value = 0;
+                _minimumHunger.Value = -1;
+                _minimumFatigue.Value = -1;
+                _maximumHappiness.Value = -1;
+                _startHour.Value = -1;
+                _endHour.Value = -1;
             }
         }
         finally
@@ -365,7 +396,12 @@ public sealed class DialogueEditorWindow : Window
             Text = _text.Text ?? "",
             Probability = (double)(_probability.Value ?? 100) / 100,
             MinimumAffection = (double)(_minimumAffection.Value ?? 0),
-            CooldownSeconds = (int)(_cooldown.Value ?? 0)
+            CooldownSeconds = (int)(_cooldown.Value ?? 0),
+            MinimumHunger = OptionalDouble(_minimumHunger.Value),
+            MinimumFatigue = OptionalDouble(_minimumFatigue.Value),
+            MaximumHappiness = OptionalDouble(_maximumHappiness.Value),
+            StartHour = OptionalInt(_startHour.Value),
+            EndHour = OptionalInt(_endHour.Value)
         };
         selected.Update(updated);
         _dirty = true;
@@ -497,4 +533,26 @@ public sealed class DialogueEditorWindow : Window
             }
         };
     }
+
+    private static NumericUpDown ConditionValue() => new()
+    {
+        Minimum = -1,
+        Maximum = 100,
+        Increment = 5,
+        Value = -1
+    };
+
+    private static NumericUpDown HourValue() => new()
+    {
+        Minimum = -1,
+        Maximum = 23,
+        Increment = 1,
+        Value = -1
+    };
+
+    private static double? OptionalDouble(decimal? value) =>
+        value is { } number && number >= 0 ? (double)number : null;
+
+    private static int? OptionalInt(decimal? value) =>
+        value is { } number && number >= 0 ? (int)number : null;
 }

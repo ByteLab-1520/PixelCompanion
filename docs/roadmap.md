@@ -75,10 +75,23 @@
 - Remove stray right-edge fragments from Yaroro's second eating and first sleeping frames.
 - Refresh the Korean README around the Yaroro edition and current application captures.
 
+## 0.5.2 Yaroro Life Hotfix
+
+- Preview and lock the intended window or desktop landing surface while dragging.
+- Detach from the previous title bar after a downward drag and restore the original placement with `Esc`.
+- Add Yaroro tail-propeller, fast-fall, and playful stunned-landing frames.
+- Add condition display, petting, cleaning, persistent sleeping and waking, idle-time sleep, and return greetings.
+- Keep hunger, cleanliness, happiness, fatigue, and affection bounded with a 12-hour offline cap.
+- Add general, focus, rest, and custom timers with persistent remaining time.
+- Add hunger, fatigue, happiness, and local-time conditions to the in-app dialogue editor.
+- Add two clear Yaroro motion sets for propeller dragging and fast falling with a stunned landing.
+- Make quiet bottom-right corner sitting the default while a foreground application is full screen, then restore the previous surface.
+- Keep Standard and Yaroro data, custom images, dialogues, and installers compatible.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.
-2. Add timer, focus/rest timer, stopwatch, notes, notifications, and richer pet interactions.
+2. Add stopwatch, notes, scheduled reminders, and native system notifications.
 3. Expand the character editor with sprite-sheet slicing, frame ordering/FPS preview, anchors, hit boxes, props, dialogue conditions, import/export, and migration-aware pack validation.
 4. Implement Windows and macOS adapters for idle time, system load, and notifications.
 5. Implement best-effort media and internal-battery adapters, with capability-gated UI and no audio capture.

@@ -18,6 +18,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("GitHub release update metadata is parsed safely", TestReleaseUpdate),
     ("locale JSON files are valid", TestLocaleFiles),
     ("window and desktop surface placement stays in bounds", TestMovementGeometry),
+    ("care interactions and assistant timers remain bounded", TestCareAndTimers),
     ("v0.2 settings remain compatible with v0.3 defaults", TestSettingsCompatibility),
     ("release versions stay consistent", TestReleaseVersionConsistency)
 };
@@ -87,6 +88,16 @@ static Task TestDialogueSelection()
     var first = selector.Select(lines, 100, DateTimeOffset.UtcNow);
     var second = selector.Select(lines, 100, DateTimeOffset.UtcNow);
     Assert(first is not null && second is not null && first.Id != second.Id, "recent line repeated");
+    var conditional = new[]
+    {
+        new DialogueLine("hungry", "Food?", MinimumHunger: 70),
+        new DialogueLine("tired", "Sleep?", MinimumFatigue: 70)
+    };
+    var hungry = new DialogueSelector(0, new Random(1)).Select(
+        conditional,
+        new PetState { Hunger = 90, Fatigue = 10 },
+        DateTimeOffset.Now);
+    Assert(hungry?.Id == "hungry", "state-conditioned dialogue selection failed");
     return Task.CompletedTask;
 }
 
@@ -171,7 +182,7 @@ static async Task TestBundledActionSprites()
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "assets", "characters",
         ProductEditionInfo.DefaultCharacterFolder, "sprites"));
     var prefix = ProductEditionInfo.IsYaroro ? "yaroro" : "default-cat";
-    var files = new[]
+    var files = new List<string>
     {
         ProductEditionInfo.IsYaroro ? "yaroro-default.png" : "default-cat.png",
         $"{prefix}-back.png",
@@ -183,6 +194,11 @@ static async Task TestBundledActionSprites()
         $"{prefix}-sleep-1.png",
         $"{prefix}-sleep-2.png"
     };
+#if PIXELCOMPANION_YARORO
+    files.Add("yaroro-drag-propeller.png");
+    files.Add("yaroro-fall.png");
+    files.Add("yaroro-land-stunned.png");
+#endif
     var expectedSize = ProductEditionInfo.IsYaroro ? 418 : 128;
     foreach (var file in files)
     {
@@ -227,7 +243,7 @@ static Task TestLegacyCharacterSlots()
     Assert(profile!.Images.ContainsKey(CharacterImageSlot.Walk1), "WalkLeft was not migrated to Walk1");
     Assert(profile.Images.ContainsKey(CharacterImageSlot.Walk2), "WalkRight was not migrated to Walk2");
     Assert(profile.Images.ContainsKey(CharacterImageSlot.Walk3), "WalkMiddle was not migrated to Walk3");
-    Assert(CharacterImageSlots.All.Count == 9 && CharacterImageSlots.All.Distinct().Count() == 9, "slot catalog contains duplicates");
+    Assert(CharacterImageSlots.All.Count == 12 && CharacterImageSlots.All.Distinct().Count() == 12, "slot catalog contains duplicates");
     return Task.CompletedTask;
 }
 
@@ -325,6 +341,22 @@ static Task TestMovementGeometry()
         petWidth: 120);
     Assert(draggedToDesktop?.Id == desktop.Id,
         "a pet dragged down from a window should select the desktop landing surface");
+    var sameScreenDesktop = new MovementSurface(
+        "desktop:2",
+        MovementSurfaceKind.DesktopFloor,
+        new DesktopRect(0, 0, 1920, 1040));
+    var snappedWindow = MovementGeometry.FindDragTarget(
+        [window, sameScreenDesktop],
+        new DesktopPoint(250, 330),
+        petWidth: 120,
+        sourceSurfaceId: sameScreenDesktop.Id);
+    Assert(snappedWindow?.Id == window.Id, "dragging near a title bar should preview that window");
+    var detachedDesktop = MovementGeometry.FindDragTarget(
+        [window, sameScreenDesktop],
+        new DesktopPoint(250, 500),
+        petWidth: 120,
+        sourceSurfaceId: window.Id);
+    Assert(detachedDesktop?.Id == sameScreenDesktop.Id, "dragging below the detach threshold should target the desktop");
 
     var support = new MovementSurface(
         "window:support",
@@ -368,6 +400,28 @@ static Task TestMovementGeometry()
     return Task.CompletedTask;
 }
 
+static Task TestCareAndTimers()
+{
+    var now = DateTimeOffset.UtcNow;
+    var service = new PetStateService();
+    var state = new PetState { Hunger = 90, Cleanliness = 10, Happiness = 20, Fatigue = 80 };
+    var fed = service.Feed(state, now);
+    Assert(fed.Hunger == 62 && fed.LastInteractionUtc == now, "feeding did not update bounded care values");
+    var cleaned = service.Clean(fed, now);
+    Assert(cleaned.Cleanliness == 45, "cleaning did not update cleanliness");
+    var sleeping = service.Sleep(cleaned, now.AddHours(-1));
+    var rested = service.ApplyElapsed(sleeping, now);
+    Assert(rested.Fatigue < sleeping.Fatigue, "sleeping did not reduce fatigue");
+
+    var timers = new AssistantTimerService();
+    var timer = timers.Start(AssistantTimerKind.Focus, 25, now);
+    Assert(timer.IsRunning && timer.DurationMinutes == 25, "focus timer did not start");
+    Assert(!timers.IsComplete(timer, now.AddMinutes(24)), "timer completed too early");
+    Assert(timers.IsComplete(timer, now.AddMinutes(25)), "timer did not complete");
+    Assert(!timers.Cancel().IsRunning, "timer cancellation failed");
+    return Task.CompletedTask;
+}
+
 static Task TestSettingsCompatibility()
 {
     const string oldJson = """{"schemaVersion":1,"language":"ko","movementSpeed":"Slow"}""";
@@ -380,7 +434,7 @@ static Task TestSettingsCompatibility()
         });
     Assert(settings is not null && settings.Language == "ko", "v0.2 settings were not read");
     Assert(settings!.MovementSurfaceMode == MovementSurfaceMode.DesktopAndWindows, "new surface default was not applied");
-    Assert(settings.FullScreenBehavior == FullScreenBehavior.Hide, "new full-screen default was not applied");
+    Assert(settings.FullScreenBehavior == FullScreenBehavior.WaitAtEdge, "new full-screen default was not applied");
     return Task.CompletedTask;
 }
 
@@ -392,7 +446,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.4.4";
+    const string version = "0.5.2";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

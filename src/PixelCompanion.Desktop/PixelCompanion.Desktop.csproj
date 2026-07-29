@@ -23,6 +23,9 @@
     <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-eat-2.png" Link="Assets\character-eat-2.png" />
     <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-sleep-1.png" Link="Assets\character-sleep-1.png" />
     <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat-sleep-2.png" Link="Assets\character-sleep-2.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat.png" Link="Assets\character-drag-propeller.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat.png" Link="Assets\character-fall.png" />
+    <AvaloniaResource Include="..\..\assets\characters\DefaultCat\sprites\default-cat.png" Link="Assets\character-land-stunned.png" />
   </ItemGroup>
   <ItemGroup Condition="'$(ProductEdition)' == 'Yaroro'">
     <AvaloniaResource Include="..\..\assets\icons\yaroro-icon.png" Link="Assets\app-icon.png" />
@@ -35,6 +38,9 @@
     <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-eat-2.png" Link="Assets\character-eat-2.png" />
     <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-sleep-1.png" Link="Assets\character-sleep-1.png" />
     <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-sleep-2.png" Link="Assets\character-sleep-2.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-drag-propeller.png" Link="Assets\character-drag-propeller.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-fall.png" Link="Assets\character-fall.png" />
+    <AvaloniaResource Include="..\..\assets\characters\Yaroro\sprites\yaroro-land-stunned.png" Link="Assets\character-land-stunned.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\assets\locales\*.json" Link="locales\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

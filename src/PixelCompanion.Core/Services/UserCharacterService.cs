@@ -131,6 +131,9 @@ public sealed class UserCharacterService(AppPaths paths, AtomicJsonStore store)
         CharacterImageSlot.Eat2 => ["eat-2"],
         CharacterImageSlot.Sleep1 => ["sleep-1"],
         CharacterImageSlot.Sleep2 => ["sleep-2"],
+        CharacterImageSlot.DragPropeller => ["drag-propeller"],
+        CharacterImageSlot.Fall => ["fall"],
+        CharacterImageSlot.LandStunned => ["land-stunned"],
         _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null)
     };
 }

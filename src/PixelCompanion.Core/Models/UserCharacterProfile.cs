@@ -11,6 +11,9 @@ public enum CharacterImageSlot
     Eat2 = 6,
     Sleep1 = 7,
     Sleep2 = 8,
+    DragPropeller = 9,
+    Fall = 10,
+    LandStunned = 11,
 
     [Obsolete("Use Walk1. This alias is retained for v0.2 profile compatibility.")]
     WalkLeft = Walk1,
@@ -32,13 +35,16 @@ public static class CharacterImageSlots
         CharacterImageSlot.Eat1,
         CharacterImageSlot.Eat2,
         CharacterImageSlot.Sleep1,
-        CharacterImageSlot.Sleep2
+        CharacterImageSlot.Sleep2,
+        CharacterImageSlot.DragPropeller,
+        CharacterImageSlot.Fall,
+        CharacterImageSlot.LandStunned
     ];
 }
 
 public sealed record UserCharacterProfile
 {
-    public int SchemaVersion { get; init; } = 2;
+    public int SchemaVersion { get; init; } = 3;
     public Dictionary<CharacterImageSlot, string> Images { get; init; } = [];
     public DateTimeOffset UpdatedAtUtc { get; init; } = DateTimeOffset.UtcNow;
 

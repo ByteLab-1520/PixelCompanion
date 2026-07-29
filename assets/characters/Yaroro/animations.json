@@ -46,8 +46,8 @@
       "id": "drag",
       "frames": [
         {
-          "source": "sprites/yaroro-default.png",
-          "durationMs": 250
+          "source": "sprites/yaroro-drag-propeller.png",
+          "durationMs": 180
         }
       ],
       "loop": true
@@ -56,8 +56,8 @@
       "id": "fall",
       "frames": [
         {
-          "source": "sprites/yaroro-default.png",
-          "durationMs": 180
+          "source": "sprites/yaroro-fall.png",
+          "durationMs": 140
         }
       ],
       "loop": true
@@ -66,8 +66,8 @@
       "id": "land",
       "frames": [
         {
-          "source": "sprites/yaroro-default.png",
-          "durationMs": 220
+          "source": "sprites/yaroro-land-stunned.png",
+          "durationMs": 900
         }
       ],
       "loop": false,

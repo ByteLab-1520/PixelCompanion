@@ -58,6 +58,14 @@ public sealed class CharacterDialogueService(AppPaths paths, AtomicJsonStore sto
                     errors.Add($"Dialogue '{line.Id}' minimum affection must be between 0 and 100.");
                 if (line.CooldownSeconds is < 0 or > MaximumCooldownSeconds)
                     errors.Add($"Dialogue '{line.Id}' cooldown is outside the supported range.");
+                if (line.MinimumHunger is < 0 or > 100 ||
+                    line.MinimumFatigue is < 0 or > 100 ||
+                    line.MaximumHappiness is < 0 or > 100)
+                    errors.Add($"Dialogue '{line.Id}' state conditions must be between 0 and 100.");
+                if (line.StartHour is < 0 or > 23 || line.EndHour is < 0 or > 23)
+                    errors.Add($"Dialogue '{line.Id}' time conditions must be between 0 and 23.");
+                if (line.StartHour.HasValue != line.EndHour.HasValue)
+                    errors.Add($"Dialogue '{line.Id}' must set both start and end hours.");
             }
         }
         return errors;

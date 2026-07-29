@@ -11,6 +11,7 @@ public interface IDesktopIntegration
 {
     IReadOnlyList<MovementSurface> GetWindowSurfaces(IReadOnlyCollection<string> excludedProcesses);
     bool IsForegroundFullScreen();
+    TimeSpan GetIdleTime();
     void SetClickThrough(nint petWindowHandle, bool enabled);
     bool IsClickThroughHotKeyPressed();
     bool SetAutoStart(bool enabled);
@@ -20,6 +21,7 @@ public sealed class SafeDesktopIntegration : IDesktopIntegration
 {
     public IReadOnlyList<MovementSurface> GetWindowSurfaces(IReadOnlyCollection<string> excludedProcesses) => [];
     public bool IsForegroundFullScreen() => false;
+    public TimeSpan GetIdleTime() => TimeSpan.Zero;
     public void SetClickThrough(nint petWindowHandle, bool enabled) { }
     public bool IsClickThroughHotKeyPressed() => false;
     public bool SetAutoStart(bool enabled) => false;
@@ -116,6 +118,15 @@ public sealed class WindowsDesktopIntegration : IDesktopIntegration
                Math.Abs(bounds.Y - info.Monitor.Top) <= tolerance &&
                Math.Abs(bounds.Right - info.Monitor.Right) <= tolerance &&
                Math.Abs(bounds.Bottom - info.Monitor.Bottom) <= tolerance;
+    }
+
+    public TimeSpan GetIdleTime()
+    {
+        if (!OperatingSystem.IsWindows()) return TimeSpan.Zero;
+        var input = new LastInputInfo { Size = (uint)Marshal.SizeOf<LastInputInfo>() };
+        if (!GetLastInputInfo(ref input)) return TimeSpan.Zero;
+        var elapsed = unchecked((uint)Environment.TickCount - input.TickCount);
+        return TimeSpan.FromMilliseconds(elapsed);
     }
 
     public void SetClickThrough(nint petWindowHandle, bool enabled)
@@ -220,6 +231,13 @@ public sealed class WindowsDesktopIntegration : IDesktopIntegration
         public uint Flags;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LastInputInfo
+    {
+        public uint Size;
+        public uint TickCount;
+    }
+
     [DllImport("user32.dll")]
     private static extern bool EnumWindows(EnumWindowsProc callback, nint parameter);
     [DllImport("user32.dll")]
@@ -246,6 +264,8 @@ public sealed class WindowsDesktopIntegration : IDesktopIntegration
     private static extern bool GetMonitorInfo(nint monitor, ref MonitorInfo info);
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int key);
+    [DllImport("user32.dll")]
+    private static extern bool GetLastInputInfo(ref LastInputInfo input);
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
     private static extern nint GetWindowLongPtr64(nint window, int index);
     [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]

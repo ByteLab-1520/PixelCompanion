@@ -20,6 +20,7 @@ public sealed class PetWindow : Window
     private readonly AtomicJsonStore _store;
     private readonly LocalizationService _localization;
     private readonly PetStateService _petStateService = new();
+    private readonly AssistantTimerService _assistantTimerService = new();
     private readonly DialogueSelector _dialogues = new();
     private readonly UserCharacterService _characterService;
     private readonly CharacterDialogueService _dialogueService;
@@ -28,6 +29,7 @@ public sealed class PetWindow : Window
     private readonly DispatcherTimer _animationTimer;
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly Image _character;
+    private readonly Border _landingIndicator;
     private readonly Dictionary<CharacterImageSlot, Bitmap> _bundledCharacters = [];
     private readonly Dictionary<CharacterImageSlot, Bitmap> _characterBitmaps = [];
     private readonly Border _bubble;
@@ -35,8 +37,13 @@ public sealed class PetWindow : Window
     private CharacterDialogueCatalog _dialogueCatalog = new();
     private AppSettings _settings;
     private PetState _petState;
+    private AssistantTimerState _assistantTimer = new();
     private PixelPoint _dragPointerStart;
     private PixelPoint _dragWindowStart;
+    private IPointer? _dragPointer;
+    private string? _surfaceBeforeDrag;
+    private string? _dragLandingSurfaceId;
+    private long _lastDragSurfacePollMs;
     private bool _dragging;
     private bool _walking;
     private PixelPoint _target;
@@ -76,11 +83,17 @@ public sealed class PetWindow : Window
     private bool _dialogueEditorOpen;
     private int _obstacleTurnDirection;
     private int _landingOperationId;
+    private long _nextCareTickMs;
+    private DateTimeOffset _lastPetStateSaveUtc = DateTimeOffset.MinValue;
+    private bool _wasUserAway;
+    private DateTimeOffset _lastReturnGreetingUtc = DateTimeOffset.MinValue;
+    private bool _careTickRunning;
 
     public bool BehaviorPaused => _settings.BehaviorPaused;
     public bool ClickThrough => _settings.ClickThrough;
     public bool DoNotDisturb => _settings.DoNotDisturb;
     public bool AutoStart => _settings.AutoStart;
+    public bool TimerRunning => _assistantTimer.IsRunning;
     public MovementSurfaceMode MovementSurfaceMode => _settings.MovementSurfaceMode;
     public event EventHandler? QuickSettingsChanged;
 
@@ -141,9 +154,21 @@ public sealed class PetWindow : Window
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
             IsVisible = false
         };
+        _landingIndicator = new Border
+        {
+            Width = 112,
+            Height = 5,
+            CornerRadius = new CornerRadius(3),
+            Background = new SolidColorBrush(Color.FromRgb(95, 220, 145)),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 0, 2),
+            IsVisible = false
+        };
 
         var canvas = new Grid();
         canvas.Children.Add(_character);
+        canvas.Children.Add(_landingIndicator);
         canvas.Children.Add(_bubble);
         Content = canvas;
         ContextMenu = BuildContextMenu();
@@ -151,6 +176,7 @@ public sealed class PetWindow : Window
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
+        KeyDown += OnKeyDown;
         Opened += async (_, _) =>
         {
             PlaceInitially();
@@ -158,6 +184,11 @@ public sealed class PetWindow : Window
             ApplySettings();
             RefreshDesktopState();
             await LoadCharacterImagesAsync();
+            _assistantTimer = await _store.LoadOrCreateAsync(
+                _paths.TimersFile,
+                () => new AssistantTimerState());
+            ContextMenu = BuildContextMenu();
+            QuickSettingsChanged?.Invoke(this, EventArgs.Empty);
             await CheckForUpdatesAsync(showResult: false);
         };
         Closing += async (_, _) => await PersistAsync();
@@ -192,11 +223,18 @@ public sealed class PetWindow : Window
         surfaces.Items.Add(Item("surface.desktopOnly", () => SetMovementSurfaceModeAsync(MovementSurfaceMode.DesktopOnly)));
         surfaces.Items.Add(Item("surface.windowsOnly", () => SetMovementSurfaceModeAsync(MovementSurfaceMode.WindowsOnly)));
         surfaces.Items.Add(Item("surface.desktopAndWindows", () => SetMovementSurfaceModeAsync(MovementSurfaceMode.DesktopAndWindows)));
+        var timers = BuildTimerMenu();
 
         menu.Items.Add(Item("menu.interact", () => ShowRandomGreeting()));
+        menu.Items.Add(Item("menu.status", OpenPetStatus));
         menu.Items.Add(Item("menu.feed", FeedAsync));
+        menu.Items.Add(Item("menu.pet", PetAsync));
         menu.Items.Add(Item("menu.play", PlayAsync));
-        menu.Items.Add(Item("menu.sleep", SleepAsync));
+        menu.Items.Add(Item("menu.clean", CleanAsync));
+        menu.Items.Add(Item(
+            _petState.Activity == ActivityState.Sleeping ? "menu.wake" : "menu.sleep",
+            _petState.Activity == ActivityState.Sleeping ? WakeAsync : SleepAsync));
+        menu.Items.Add(timers);
         menu.Items.Add(Item("menu.editDialogues", OpenDialogueEditor));
         menu.Items.Add(new Separator());
         menu.Items.Add(pause);
@@ -222,6 +260,31 @@ public sealed class PetWindow : Window
         return menu;
     }
 
+    private MenuItem BuildTimerMenu()
+    {
+        var timers = new MenuItem { Header = _localization.Get("menu.timer") };
+        timers.Items.Add(RawItem(
+            string.Format(_localization.Get("timer.preset"), 5),
+            () => StartAssistantTimer(AssistantTimerKind.General, 5)));
+        timers.Items.Add(RawItem(
+            string.Format(_localization.Get("timer.preset"), 10),
+            () => StartAssistantTimer(AssistantTimerKind.General, 10)));
+        timers.Items.Add(Item("timer.focus25", () => StartAssistantTimer(AssistantTimerKind.Focus, 25)));
+        timers.Items.Add(Item("timer.focus50", () => StartAssistantTimer(AssistantTimerKind.Focus, 50)));
+        timers.Items.Add(Item("timer.rest5", () => StartAssistantTimer(AssistantTimerKind.Rest, 5)));
+        timers.Items.Add(Item("timer.custom", OpenCustomTimer));
+        if (_assistantTimer.IsRunning)
+        {
+            var remaining = _assistantTimer.Remaining(DateTimeOffset.UtcNow);
+            timers.Items.Add(new Separator());
+            timers.Items.Add(RawItem(
+                string.Format(_localization.Get("timer.remaining"), FormatRemaining(remaining)),
+                ShowTimerStatus));
+            timers.Items.Add(Item("timer.cancel", CancelAssistantTimer));
+        }
+        return timers;
+    }
+
     private MenuItem Item(string key, Action action) => RawItem(_localization.Get(key), action);
     private static MenuItem RawItem(string text, Action action)
     {
@@ -242,9 +305,14 @@ public sealed class PetWindow : Window
         _specialAnimation = [];
         _dragPointerStart = this.PointToScreen(point.Position);
         _dragWindowStart = Position;
+        _surfaceBeforeDrag = _currentSurfaceId;
+        _dragLandingSurfaceId = null;
+        _lastDragSurfacePollMs = 0;
+        _dragPointer = e.Pointer;
         e.Pointer.Capture(this);
-        SetCharacterFrame(CharacterImageSlot.Default);
-        _character.RenderTransform = new RotateTransform(6);
+        SetCharacterFrame(CharacterImageSlot.DragPropeller);
+        _character.RenderTransform = new RotateTransform(4);
+        UpdateDragLandingTarget(force: true);
         e.Handled = true;
     }
 
@@ -253,6 +321,8 @@ public sealed class PetWindow : Window
         if (!_dragging) return;
         var current = this.PointToScreen(e.GetPosition(this));
         Position = new PixelPoint(_dragWindowStart.X + current.X - _dragPointerStart.X, _dragWindowStart.Y + current.Y - _dragPointerStart.Y);
+        _character.RenderTransform = new RotateTransform((_clock.ElapsedMilliseconds / 120) % 2 == 0 ? 4 : -4);
+        UpdateDragLandingTarget(force: false);
     }
 
     private async void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -264,15 +334,57 @@ public sealed class PetWindow : Window
         }
         _dragging = false;
         e.Pointer.Capture(null);
+        _dragPointer = null;
+        _landingIndicator.IsVisible = false;
         var operationId = ++_landingOperationId;
-        await LandAsync(operationId);
+        await LandAsync(operationId, _dragLandingSurfaceId);
     }
 
-    private async Task LandAsync(int operationId)
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (!_dragging || e.Key != Key.Escape) return;
+        _landingOperationId++;
+        _dragging = false;
+        _dragPointer?.Capture(null);
+        _dragPointer = null;
+        e.Handled = true;
+        Position = _dragWindowStart;
+        _landingIndicator.IsVisible = false;
+        if (FindSurface(_surfaceBeforeDrag) is { } original)
+            AttachToSurface(original, Position.X);
+        SetCharacterFrame(CharacterImageSlot.Default);
+        _character.RenderTransform = null;
+    }
+
+    private void UpdateDragLandingTarget(bool force)
+    {
+        var now = _clock.ElapsedMilliseconds;
+        if (!force && now - _lastDragSurfacePollMs < 100) return;
+        _lastDragSurfacePollMs = now;
+        RefreshWindowSurfaces();
+        var petWidth = PetPixelWidth();
+        var petBottomCenter = new DesktopPoint(
+            Position.X + petWidth / 2,
+            Position.Y + PetPixelHeight());
+        var target = MovementGeometry.FindDragTarget(
+            GetAvailableSurfaces().Where(surface => GetWalkableRanges(surface).Count > 0),
+            petBottomCenter,
+            petWidth,
+            _surfaceBeforeDrag);
+        _dragLandingSurfaceId = target?.Id;
+        _landingIndicator.IsVisible = target is not null;
+        _landingIndicator.Background = new SolidColorBrush(
+            target?.Kind == MovementSurfaceKind.WindowTop
+                ? Color.FromRgb(95, 220, 145)
+                : Color.FromRgb(100, 175, 245));
+    }
+
+    private async Task LandAsync(int operationId, string? preferredSurfaceId = null)
     {
         if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
             return;
 
+        SetCharacterFrame(CharacterImageSlot.Fall);
         _character.RenderTransform = new RotateTransform(-4);
         RefreshWindowSurfaces();
         var currentPetWidth = PetPixelWidth();
@@ -284,13 +396,15 @@ public sealed class PetWindow : Window
                 var ground = surface.Kind == MovementSurfaceKind.WindowTop
                     ? surface.Bounds.Y
                     : surface.Bounds.Bottom;
-                return ground >= petBottom - 48 && GetWalkableRanges(surface).Count > 0;
+                return (surface.Id == preferredSurfaceId || ground >= petBottom - 48) &&
+                       GetWalkableRanges(surface).Count > 0;
             })
             .ToArray();
-        var surface = MovementGeometry.FindNearest(
-            candidates,
-            new DesktopPoint(Position.X + (currentPetWidth / 2), petBottom),
-            currentPetWidth);
+        var surface = candidates.FirstOrDefault(candidate => candidate.Id == preferredSurfaceId) ??
+                      MovementGeometry.FindNearest(
+                          candidates,
+                          new DesktopPoint(Position.X + (currentPetWidth / 2), petBottom),
+                          currentPetWidth);
         var landingRange = surface is null
             ? null
             : MovementGeometry.FindNearestRange(GetWalkableRanges(surface), Position.X);
@@ -305,7 +419,9 @@ public sealed class PetWindow : Window
         {
             var x = (int)Math.Round(placement.X);
             var floor = (int)Math.Round(placement.Y);
-            for (var y = Position.Y; y < floor; y = Math.Min(floor, y + 18))
+            var fallStartY = Position.Y;
+            var fallStep = ProductEditionInfo.IsYaroro ? 32 : 22;
+            for (var y = Position.Y; y < floor; y = Math.Min(floor, y + fallStep))
             {
                 if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
                     return;
@@ -316,9 +432,20 @@ public sealed class PetWindow : Window
                 return;
             Position = new PixelPoint(x, floor);
             AttachToSurface(surface, x);
+            if (ProductEditionInfo.IsYaroro && floor - fallStartY >= 70)
+            {
+                SetCharacterFrame(CharacterImageSlot.LandStunned);
+                _character.RenderTransform = null;
+                await Task.Delay(900);
+                if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+                    return;
+            }
         }
         if (MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+        {
+            SetCharacterFrame(CharacterImageSlot.Default);
             _character.RenderTransform = null;
+        }
     }
 
     private void UpdateMovement()
@@ -340,9 +467,16 @@ public sealed class PetWindow : Window
             _nextSettingsPollMs = now + 1000;
             _ = ReloadExternalSettingsAsync();
         }
+        if (now >= _nextCareTickMs)
+        {
+            _nextCareTickMs = now + 1000;
+            _ = TickCareAndTimerAsync();
+        }
 
         var inactive = _dragging || _transitioning || _recovering || _dialogueEditorOpen ||
+                       _waitingAtFullScreenEdge ||
                        now < _specialAnimationUntilMs ||
+                       _petState.Activity == ActivityState.Sleeping ||
                        _settings.BehaviorPaused || _settings.DoNotDisturb || !IsVisible;
         SetMovementTimerInterval(inactive ? 500 : _walking ? 66 : 250);
         if (inactive) return;
@@ -407,6 +541,24 @@ public sealed class PetWindow : Window
             _specialAnimation = [];
             _specialAnimationUntilMs = 0;
             SetCharacterFrame(CharacterImageSlot.Default);
+        }
+        if (_waitingAtFullScreenEdge)
+        {
+            _animationTimer.Interval = TimeSpan.FromMilliseconds(1000);
+            _character.Margin = default;
+            _character.RenderTransform = null;
+            SetCharacterFrame(CharacterImageSlot.Default);
+            return;
+        }
+        if (_petState.Activity == ActivityState.Sleeping)
+        {
+            _animationTimer.Interval = TimeSpan.FromMilliseconds(850);
+            _character.Margin = default;
+            SetCharacterFrame(
+                _specialAnimationFrame++ % 2 == 0
+                    ? CharacterImageSlot.Sleep1
+                    : CharacterImageSlot.Sleep2);
+            return;
         }
 
         _animationTimer.Interval = TimeSpan.FromMilliseconds(_walking ? 260 : 800);
@@ -504,6 +656,9 @@ public sealed class PetWindow : Window
         CharacterImageSlot.Eat2 => "character-eat-2.png",
         CharacterImageSlot.Sleep1 => "character-sleep-1.png",
         CharacterImageSlot.Sleep2 => "character-sleep-2.png",
+        CharacterImageSlot.DragPropeller => "character-drag-propeller.png",
+        CharacterImageSlot.Fall => "character-fall.png",
+        CharacterImageSlot.LandStunned => "character-land-stunned.png",
         _ => "character-default.png"
     };
 
@@ -723,6 +878,7 @@ public sealed class PetWindow : Window
             }
             _waitingAtFullScreenEdge = false;
             _surfaceBeforeFullScreen = null;
+            _nextDecisionMs = _clock.ElapsedMilliseconds + 1800;
         }
 
         if (_settings.FullScreenBehavior == FullScreenBehavior.Hide)
@@ -746,6 +902,9 @@ public sealed class PetWindow : Window
         _waitingAtFullScreenEdge = true;
         _walking = false;
         _bubble.IsVisible = false;
+        _character.Margin = default;
+        _character.RenderTransform = null;
+        SetCharacterFrame(CharacterImageSlot.Default);
         var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
         if (screen is null) return;
         var area = screen.WorkingArea;
@@ -988,14 +1147,18 @@ public sealed class PetWindow : Window
         ContextMenu = BuildContextMenu();
     }
 
-    private double PixelsPerSecond() => _settings.MovementSpeed switch
+    private double PixelsPerSecond()
     {
-        MovementSpeed.VerySlow => 18,
-        MovementSpeed.Slow => 30,
-        MovementSpeed.Normal => 48,
-        MovementSpeed.Fast => 75,
-        _ => Math.Clamp(_settings.CustomPixelsPerSecond, 5, 240)
-    };
+        var baseSpeed = _settings.MovementSpeed switch
+        {
+            MovementSpeed.VerySlow => 18,
+            MovementSpeed.Slow => 30,
+            MovementSpeed.Normal => 48,
+            MovementSpeed.Fast => 75,
+            _ => Math.Clamp(_settings.CustomPixelsPerSecond, 5, 240)
+        };
+        return _petState.Mood is MoodState.Tired or MoodState.Hungry ? baseSpeed * 0.72 : baseSpeed;
+    }
 
     private void ShowRandomGreeting() => ShowDialogue(DialogueGroupIds.Click);
 
@@ -1029,7 +1192,7 @@ public sealed class PetWindow : Window
     {
         var selected = _dialogues.Select(
             _dialogueCatalog.GetGroup(groupId),
-            _petState.Affection,
+            _petState,
             DateTimeOffset.UtcNow);
         if (selected is not null) ShowBubble(ExpandDialogueVariables(selected.Text));
     }
@@ -1074,20 +1237,161 @@ public sealed class PetWindow : Window
         _petState = _petStateService.Feed(_petState, DateTimeOffset.UtcNow);
         StartSpecialAnimation([CharacterImageSlot.Eat1, CharacterImageSlot.Eat2], 3200);
         ShowDialogue(DialogueGroupIds.Feed);
-        await _store.SaveAsync(_paths.PetStateFile, _petState);
+        await SavePetStateAsync();
     }
 
-    private void SleepAsync()
+    private async void PetAsync()
     {
-        StartSpecialAnimation([CharacterImageSlot.Sleep1, CharacterImageSlot.Sleep2], 8000);
+        _petState = _petStateService.Pet(_petState, DateTimeOffset.UtcNow);
+        _character.RenderTransform = new RotateTransform(-5);
+        ShowBubble(_localization.Get("interaction.pet"));
+        await Task.Delay(350);
+        _character.RenderTransform = null;
+        await SavePetStateAsync();
+    }
+
+    private async void CleanAsync()
+    {
+        _petState = _petStateService.Clean(_petState, DateTimeOffset.UtcNow);
+        ShowBubble(_localization.Get("interaction.clean"));
+        await Task.Delay(600);
+        _petState = _petState with { Activity = ActivityState.Idle };
+        await SavePetStateAsync();
+    }
+
+    private async void SleepAsync()
+    {
+        _petState = _petStateService.Sleep(_petState, DateTimeOffset.UtcNow);
+        _walking = false;
         ShowDialogue(DialogueGroupIds.Sleep);
+        ContextMenu = BuildContextMenu();
+        await SavePetStateAsync();
+    }
+
+    private async void WakeAsync()
+    {
+        _petState = _petStateService.Wake(_petState, DateTimeOffset.UtcNow);
+        SetCharacterFrame(CharacterImageSlot.Default);
+        _nextDecisionMs = _clock.ElapsedMilliseconds + 1800;
+        ShowBubble(_localization.Get("interaction.wake"));
+        ContextMenu = BuildContextMenu();
+        await SavePetStateAsync();
     }
 
     private async void PlayAsync()
     {
         _petState = _petStateService.Play(_petState, DateTimeOffset.UtcNow);
         ShowDialogue(DialogueGroupIds.Play);
+        await Task.Delay(900);
+        _petState = _petState with { Activity = ActivityState.Idle };
+        await SavePetStateAsync();
+    }
+
+    private void OpenPetStatus()
+    {
+        var status = new PetStatusWindow(_petState, _localization) { Topmost = _settings.AlwaysOnTop };
+        status.Show(this);
+    }
+
+    private async void StartAssistantTimer(AssistantTimerKind kind, int minutes)
+    {
+        _assistantTimer = _assistantTimerService.Start(kind, minutes, DateTimeOffset.UtcNow);
+        await _store.SaveAsync(_paths.TimersFile, _assistantTimer);
+        ContextMenu = BuildContextMenu();
+        QuickSettingsChanged?.Invoke(this, EventArgs.Empty);
+        ShowBubble(string.Format(_localization.Get("timer.started"), minutes));
+    }
+
+    private async void CancelAssistantTimer()
+    {
+        _assistantTimer = _assistantTimerService.Cancel();
+        await _store.SaveAsync(_paths.TimersFile, _assistantTimer);
+        ContextMenu = BuildContextMenu();
+        QuickSettingsChanged?.Invoke(this, EventArgs.Empty);
+        ShowBubble(_localization.Get("timer.cancelled"));
+    }
+
+    private async void OpenCustomTimer()
+    {
+        var setup = new TimerSetupWindow(_localization) { Topmost = _settings.AlwaysOnTop };
+        var request = await setup.ShowDialog<TimerRequest?>(this);
+        if (request is not null) StartAssistantTimer(request.Kind, request.Minutes);
+    }
+
+    public void ShowTimerStatus()
+    {
+        if (!_assistantTimer.IsRunning)
+        {
+            ShowBubble(_localization.Get("timer.none"));
+            return;
+        }
+        ShowBubble(string.Format(
+            _localization.Get("timer.remainingBubble"),
+            FormatRemaining(_assistantTimer.Remaining(DateTimeOffset.UtcNow))));
+    }
+
+    private static string FormatRemaining(TimeSpan remaining)
+    {
+        if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
+        return remaining.TotalHours >= 1
+            ? $"{(int)remaining.TotalHours}:{remaining.Minutes:00}:{remaining.Seconds:00}"
+            : $"{(int)remaining.TotalMinutes}:{remaining.Seconds:00}";
+    }
+
+    private async Task TickCareAndTimerAsync()
+    {
+        if (_careTickRunning) return;
+        _careTickRunning = true;
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            _petState = _petStateService.ApplyElapsed(_petState, now);
+            var idle = _desktopIntegration.GetIdleTime();
+            if (idle >= TimeSpan.FromMinutes(5))
+            {
+                if (!_wasUserAway)
+                {
+                    _wasUserAway = true;
+                    _petState = _petStateService.Sleep(_petState, now);
+                    _walking = false;
+                    ContextMenu = BuildContextMenu();
+                }
+            }
+            else if (_wasUserAway && idle <= TimeSpan.FromSeconds(8))
+            {
+                _wasUserAway = false;
+                _petState = _petStateService.Wake(_petState, now);
+                ContextMenu = BuildContextMenu();
+                if (now - _lastReturnGreetingUtc >= TimeSpan.FromMinutes(30))
+                {
+                    _lastReturnGreetingUtc = now;
+                    ShowBubble(_localization.Get("interaction.return"));
+                }
+            }
+
+            if (_assistantTimerService.IsComplete(_assistantTimer, now))
+            {
+                var completedKind = _assistantTimer.Kind;
+                _assistantTimer = _assistantTimerService.Cancel();
+                await _store.SaveAsync(_paths.TimersFile, _assistantTimer);
+                ContextMenu = BuildContextMenu();
+                QuickSettingsChanged?.Invoke(this, EventArgs.Empty);
+                ShowBubble(_localization.Get($"timer.finished.{completedKind.ToString().ToLowerInvariant()}"));
+            }
+
+            if (now - _lastPetStateSaveUtc >= TimeSpan.FromMinutes(1))
+                await SavePetStateAsync();
+        }
+        finally
+        {
+            _careTickRunning = false;
+        }
+    }
+
+    private async Task SavePetStateAsync()
+    {
         await _store.SaveAsync(_paths.PetStateFile, _petState);
+        _lastPetStateSaveUtc = DateTimeOffset.UtcNow;
     }
 
     private async void SetSpeedAsync(MovementSpeed speed)

@@ -121,7 +121,7 @@ public sealed class ConfigWindow : Window
     {
         var info = new TextBlock
         {
-            Text = "Drop an image onto a slot or click Choose. PNG, JPG, JPEG, and GIF files up to 20 MB are supported. GIF uses its first frame. Missing walking, eating, or sleeping images fall back to Default.\n\n이미지를 각 칸에 끌어 놓거나 선택 버튼을 누르세요. 20MB 이하 PNG, JPG, JPEG, GIF를 지원하며 GIF는 첫 프레임을 사용합니다. 빠진 걷기·밥 먹기·잠자기 이미지는 기본 이미지로 자연스럽게 대체됩니다.",
+            Text = "Drop an image onto a slot or click Choose. PNG, JPG, JPEG, and GIF files up to 20 MB are supported. GIF uses its first frame. Missing action images fall back to Default.\n\n이미지를 각 칸에 끌어 놓거나 선택 버튼을 누르세요. 20MB 이하 PNG, JPG, JPEG, GIF를 지원하며 GIF는 첫 프레임을 사용합니다. 빠진 동작 이미지는 기본 이미지로 자연스럽게 대체됩니다.",
             TextWrapping = TextWrapping.Wrap
         };
         var imageSlots = new WrapPanel { Orientation = Orientation.Horizontal };
@@ -134,6 +134,9 @@ public sealed class ConfigWindow : Window
         imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Eat2, "Eat 2 / 밥 먹기 2"));
         imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Sleep1, "Sleep 1 / 잠자기 1"));
         imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Sleep2, "Sleep 2 / 잠자기 2"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.DragPropeller, "Drag propeller / 꼬리 프로펠러"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.Fall, "Fall / 낙하"));
+        imageSlots.Children.Add(BuildImageSlot(CharacterImageSlot.LandStunned, "Stunned landing / 기절 착지"));
         var validate = new Button { Content = "Validate bundled character / 기본 캐릭터 검사", HorizontalAlignment = HorizontalAlignment.Left };
         validate.Click += async (_, _) => await ValidateBundledCharacterAsync();
         var panel = FormPanel();
@@ -348,7 +351,7 @@ public sealed class ConfigWindow : Window
                 : MovementSurfaceMode.DesktopAndWindows,
             FullScreenBehavior = Enum.TryParse<FullScreenBehavior>(_fullScreenBehavior.SelectedItem?.ToString(), out var fullScreen)
                 ? fullScreen
-                : FullScreenBehavior.Hide,
+                : FullScreenBehavior.WaitAtEdge,
             CharacterScale = (double)(_scale.Value ?? 2),
             AlwaysOnTop = _topmost.IsChecked == true,
             ClickThrough = _clickThrough.IsChecked == true,
@@ -413,6 +416,9 @@ public sealed class ConfigWindow : Window
             CharacterImageSlot.Eat2 => $"{prefix}-eat-2.png",
             CharacterImageSlot.Sleep1 => $"{prefix}-sleep-1.png",
             CharacterImageSlot.Sleep2 => $"{prefix}-sleep-2.png",
+            CharacterImageSlot.DragPropeller => ProductEditionInfo.IsYaroro ? "yaroro-drag-propeller.png" : "default-cat.png",
+            CharacterImageSlot.Fall => ProductEditionInfo.IsYaroro ? "yaroro-fall.png" : "default-cat.png",
+            CharacterImageSlot.LandStunned => ProductEditionInfo.IsYaroro ? "yaroro-land-stunned.png" : "default-cat.png",
             _ => null
         };
         if (fileName is null) return null;

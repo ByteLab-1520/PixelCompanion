@@ -74,6 +74,43 @@ public static class MovementGeometry
             .FirstOrDefault();
     }
 
+    public static MovementSurface? FindDragTarget(
+        IEnumerable<MovementSurface> surfaces,
+        DesktopPoint petBottomCenter,
+        double petWidth,
+        string? sourceSurfaceId,
+        double windowSnapDistance = 120,
+        double detachDistance = 84)
+    {
+        var available = surfaces
+            .Where(surface => surface.IsWalkable && surface.IsValidFor(petWidth))
+            .ToArray();
+        var source = available.FirstOrDefault(surface => surface.Id == sourceSurfaceId);
+        var detachedFromSource = source?.Kind == MovementSurfaceKind.WindowTop &&
+                                 petBottomCenter.Y > source.Bounds.Y + detachDistance;
+
+        var window = available
+            .Where(surface =>
+                surface.Kind == MovementSurfaceKind.WindowTop &&
+                (!detachedFromSource || surface.Id != sourceSurfaceId) &&
+                petBottomCenter.X >= surface.Bounds.X - 36 &&
+                petBottomCenter.X <= surface.Bounds.Right + 36 &&
+                surface.Bounds.Y >= petBottomCenter.Y - 48 &&
+                surface.Bounds.Y <= petBottomCenter.Y + windowSnapDistance)
+            .OrderBy(surface => Math.Abs(petBottomCenter.Y - surface.Bounds.Y))
+            .ThenBy(surface => surface.ZOrder)
+            .FirstOrDefault();
+        if (window is not null) return window;
+
+        return available
+            .Where(surface =>
+                surface.Kind is MovementSurfaceKind.DesktopFloor or MovementSurfaceKind.CustomRegion &&
+                petBottomCenter.X >= surface.Bounds.X &&
+                petBottomCenter.X <= surface.Bounds.Right)
+            .OrderBy(surface => Math.Abs(petBottomCenter.Y - surface.Bounds.Bottom))
+            .FirstOrDefault();
+    }
+
     public static double RelativeX(MovementSurface surface, double petX, double petWidth)
     {
         var travel = surface.Bounds.Width - petWidth;

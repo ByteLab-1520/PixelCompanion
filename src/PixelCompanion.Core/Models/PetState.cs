@@ -1,11 +1,11 @@
 namespace PixelCompanion.Core.Models;
 
-public enum ActivityState { Normal, Idle, Walking, Sitting, Sleeping, Playing, ListeningToMusic, WatchingVideo, Charging, BeingDragged }
+public enum ActivityState { Normal, Idle, Walking, Sitting, Sleeping, Playing, Cleaning, ListeningToMusic, WatchingVideo, Charging, BeingDragged }
 public enum MoodState { Neutral, Happy, Sad, Tired, Hungry }
 
 public sealed record PetState
 {
-    public int SchemaVersion { get; init; } = 1;
+    public int SchemaVersion { get; init; } = 2;
     public double Hunger { get; init; } = 15;
     public double Cleanliness { get; init; } = 85;
     public double Happiness { get; init; } = 75;
@@ -34,4 +34,3 @@ public sealed record EnvironmentSnapshot
     public bool IsFullScreen { get; init; }
     public bool IsHighLoad { get; init; }
 }
-
