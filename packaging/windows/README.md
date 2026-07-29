@@ -5,8 +5,8 @@ The Windows package is a per-user Inno Setup installer for Windows 10/11 x64. It
 Build it from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.2 -Edition Standard
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.2 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.3 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.3 -Edition Yaroro
 ```
 
 The Standard installer is written to `artifacts/windows/standard/installer/`; the for Yaroro installer is written to `artifacts/windows/yaroro/installer/`. Build checksums end in `.unsigned.sha256`.

@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory)]
     [string] $SignedInstallerPath,
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string] $Version = '0.4.2',
+    [string] $Version = '0.4.3',
     [ValidateSet('Standard', 'Yaroro')]
     [string] $Edition = 'Standard',
     [string] $OutputDirectory

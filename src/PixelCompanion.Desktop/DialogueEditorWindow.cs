@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Layout;
@@ -53,7 +54,7 @@ public sealed class DialogueEditorWindow : Window
     {
         AcceptsReturn = true,
         TextWrapping = TextWrapping.Wrap,
-        MinHeight = 150,
+        MinHeight = 120,
         MaxLength = CharacterDialogueService.MaximumTextLength
     };
     private readonly NumericUpDown _probability = new()
@@ -196,12 +197,20 @@ public sealed class DialogueEditorWindow : Window
         var body = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("2*,3*"),
-            ColumnSpacing = 18
+            ColumnSpacing = 18,
+            ClipToBounds = true
+        };
+        var fieldsScroller = new ScrollViewer
+        {
+            Content = fields,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Padding = new Thickness(0, 0, 8, 0)
         };
         Grid.SetColumn(listPanel, 0);
-        Grid.SetColumn(fields, 1);
+        Grid.SetColumn(fieldsScroller, 1);
         body.Children.Add(listPanel);
-        body.Children.Add(fields);
+        body.Children.Add(fieldsScroller);
 
         var test = Button("dialogueEditor.test", TestLine);
         var save = Button("dialogueEditor.save", async () => await SaveAsync());

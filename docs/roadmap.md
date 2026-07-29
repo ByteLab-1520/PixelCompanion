@@ -58,6 +58,13 @@
 - Keep editing responsive across line selection, text input, numeric options, and language changes.
 - Make the Yaroro installer automatically uninstall the Standard application while preserving Standard user data.
 
+## 0.4.3 UI & Drag Hot Fix
+
+- Keep the dialogue editor usable in a small window and at high Windows display scaling by scrolling the field column without moving the footer.
+- Stop attached-window synchronization for the duration of a pointer drag.
+- Refresh surfaces when the pointer is released, then land on the nearest valid window or desktop surface without requiring the supporting window to close.
+- Cover the drag synchronization rule with a regression test.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.

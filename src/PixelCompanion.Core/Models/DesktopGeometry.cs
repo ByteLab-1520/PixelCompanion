@@ -37,6 +37,8 @@ public readonly record struct WalkableRange(double MinimumX, double MaximumX)
 
 public static class MovementGeometry
 {
+    public static bool ShouldSynchronizeAttachedSurface(bool isDragging) => !isDragging;
+
     public static bool TryPlace(
         MovementSurface surface,
         double requestedX,

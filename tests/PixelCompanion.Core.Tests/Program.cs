@@ -305,6 +305,16 @@ static Task TestMovementGeometry()
         "right-facing frame should not flip while moving right");
     Assert(MovementGeometry.HorizontalScale(movingLeft: true, frameFacesLeft: false) == -1,
         "right-facing frame should flip while moving left");
+    Assert(MovementGeometry.ShouldSynchronizeAttachedSurface(isDragging: false),
+        "an attached idle pet should continue following its surface");
+    Assert(!MovementGeometry.ShouldSynchronizeAttachedSurface(isDragging: true),
+        "surface tracking must not pull a dragged pet back onto a window");
+    var draggedToDesktop = MovementGeometry.FindNearest(
+        [window, desktop],
+        new DesktopPoint(-960, desktop.Bounds.Bottom),
+        petWidth: 120);
+    Assert(draggedToDesktop?.Id == desktop.Id,
+        "a pet dragged down from a window should select the desktop landing surface");
 
     var support = new MovementSurface(
         "window:support",
@@ -372,7 +382,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.4.2";
+    const string version = "0.4.3";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

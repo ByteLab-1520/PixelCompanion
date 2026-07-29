@@ -268,7 +268,7 @@ public sealed class PetWindow : Window
     private async Task LandAsync()
     {
         _character.RenderTransform = new RotateTransform(-4);
-        RefreshDesktopState();
+        RefreshWindowSurfaces();
         var currentPetWidth = PetPixelWidth();
         var currentPetHeight = PetPixelHeight();
         var petBottom = Position.Y + currentPetHeight;
@@ -318,7 +318,8 @@ public sealed class PetWindow : Window
         if (_desktopIntegration.IsClickThroughHotKeyPressed())
             ToggleClickThrough();
 
-        if (now >= _nextDesktopPollMs)
+        if (MovementGeometry.ShouldSynchronizeAttachedSurface(_dragging) &&
+            now >= _nextDesktopPollMs)
         {
             _nextDesktopPollMs = now + (_walking ? 500 : 1000);
             RefreshDesktopState();
@@ -587,7 +588,7 @@ public sealed class PetWindow : Window
 
     private void RefreshDesktopState()
     {
-        _windowSurfaces = _desktopIntegration.GetWindowSurfaces(_settings.ExcludedWindowProcesses);
+        RefreshWindowSurfaces();
         HandleFullScreen();
 
         var signature = string.Join("|", Screens.All.Select(screen =>
@@ -679,6 +680,11 @@ public sealed class PetWindow : Window
         {
             Position = new PixelPoint((int)Math.Round(placement.X), (int)Math.Round(placement.Y));
         }
+    }
+
+    private void RefreshWindowSurfaces()
+    {
+        _windowSurfaces = _desktopIntegration.GetWindowSurfaces(_settings.ExcludedWindowProcesses);
     }
 
     private void HandleFullScreen()

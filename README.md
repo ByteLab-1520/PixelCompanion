@@ -2,14 +2,14 @@
 
 ```text
 ┌──────────────────────────────────────┐
-│      PIXEL COMPANION  v0.4.2         │
+│      PIXEL COMPANION  v0.4.3         │
 │       작은 친구, 조용한 동행         │
 └──────────────────────────────────────┘
 ```
 
 **작업을 방해하지 않고, 바탕화면 한쪽에서 함께 지내는 도트 데스크톱 펫**
 
-[![Version](https://img.shields.io/badge/version-0.4.2-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.4.3-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)](.)
@@ -63,6 +63,15 @@ Pixel Companion은 바탕화면 위를 천천히 돌아다니는 작은 도트 �
 - 한국어 번역이 없으면 영어를, 영어도 없으면 번역 키를 표시해 프로그램이 멈추지 않게 합니다.
 
 아직 모든 계획이 완성된 것은 아닙니다. 타이머, 미디어 반응, 배터리 반응과 세밀한 캐릭터 제작 도구는 아래 로드맵에 따라 차례로 추가할 예정입니다.
+
+---
+
+## ░░ v0.4.3 UI & Drag Hot Fix
+
+- 작은 창이나 높은 Windows 배율에서도 대사 편집 항목이 하단 버튼과 겹치지 않도록 편집 영역에 세로 스크롤을 추가했습니다.
+- 미리보기·저장·닫기 버튼은 항상 고정된 하단 영역에 표시됩니다.
+- 프로그램 창 위의 캐릭터를 드래그할 때 창 추적이 캐릭터를 원래 자리로 되돌리던 문제를 고쳤습니다.
+- 드래그 중에는 마우스를 그대로 따라가고, 놓은 순간 창과 바탕 화면을 다시 확인해 가장 가까운 유효 발판에 착지합니다.
 
 ---
 
@@ -268,8 +277,8 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Inno Setup을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.2 -Edition Standard
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.2 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.3 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.3 -Edition Yaroro
 ```
 
 서명 전 설치 파일은 다음 폴더에 만들어집니다.
@@ -298,6 +307,7 @@ artifacts/windows/yaroro/installer/
 | `v0.4.0` | 두 에디션과 내 대사 | 기본판·for Yaroro판 동시 제공, 독립 설치·데이터, 우클릭 대사 편집과 안전 저장 |
 | `v0.4.1` | 창 위 장애물 Hot Fix | 앞쪽 창의 겹친 구간을 벽으로 인식하고 충돌하면 같은 발판에서 방향 전환 |
 | `v0.4.2` | 대사 편집기 Hot Fix | 편집기 응답 없음 수정, 야로로 설치 시 기본판 프로그램 자동 제거와 사용자 데이터 보존 |
+| `v0.4.3` | UI & Drag Hot Fix | 작은 대사 편집기 레이아웃 수정, 창 위 캐릭터의 자유로운 드래그와 재착지 |
 | `v0.5.0` | 함께 돌보는 재미 | 상태값 변화, 먹이·청소·쓰다듬기·수면, 타이머와 집중 타이머 |
 | `v0.6.0` | Windows 상황 인식 | 자리 비움·복귀, 전체 화면, 시스템 부하, 배터리·충전, 음악·영상 반응 |
 | `v0.7.0` | 캐릭터 제작 도구 | 스프라이트 시트, 프레임 순서와 FPS, 기준점, 히트박스, 소품과 조건부 대사 |
