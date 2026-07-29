@@ -83,6 +83,7 @@ public sealed class PetWindow : Window
     private bool _dialogueEditorOpen;
     private int _obstacleTurnDirection;
     private int _landingOperationId;
+    private bool _landing;
     private long _nextCareTickMs;
     private DateTimeOffset _lastPetStateSaveUtc = DateTimeOffset.MinValue;
     private bool _wasUserAway;
@@ -299,6 +300,7 @@ public sealed class PetWindow : Window
         if (point.Properties.IsRightButtonPressed) return;
         if (!point.Properties.IsLeftButtonPressed) return;
         _landingOperationId++;
+        _landing = false;
         _dragging = true;
         _walking = false;
         _specialAnimationUntilMs = 0;
@@ -344,6 +346,7 @@ public sealed class PetWindow : Window
     {
         if (!_dragging || e.Key != Key.Escape) return;
         _landingOperationId++;
+        _landing = false;
         _dragging = false;
         _dragPointer?.Capture(null);
         _dragPointer = null;
@@ -384,67 +387,76 @@ public sealed class PetWindow : Window
         if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
             return;
 
-        SetCharacterFrame(CharacterImageSlot.Fall);
-        _character.RenderTransform = new RotateTransform(-4);
-        RefreshWindowSurfaces();
-        var currentPetWidth = PetPixelWidth();
-        var currentPetHeight = PetPixelHeight();
-        var petBottom = Position.Y + currentPetHeight;
-        var candidates = GetAvailableSurfaces()
-            .Where(surface =>
-            {
-                var ground = surface.Kind == MovementSurfaceKind.WindowTop
-                    ? surface.Bounds.Y
-                    : surface.Bounds.Bottom;
-                return (surface.Id == preferredSurfaceId || ground >= petBottom - 48) &&
-                       GetWalkableRanges(surface).Count > 0;
-            })
-            .ToArray();
-        var surface = candidates.FirstOrDefault(candidate => candidate.Id == preferredSurfaceId) ??
-                      MovementGeometry.FindNearest(
-                          candidates,
-                          new DesktopPoint(Position.X + (currentPetWidth / 2), petBottom),
-                          currentPetWidth);
-        var landingRange = surface is null
-            ? null
-            : MovementGeometry.FindNearestRange(GetWalkableRanges(surface), Position.X);
-        if (surface is not null &&
-            landingRange is not null &&
-            MovementGeometry.TryPlace(
-                surface,
-                Math.Clamp(Position.X, landingRange.Value.MinimumX, landingRange.Value.MaximumX),
-                PetPixelWidth(surface),
-                PetPixelHeight(surface),
-                out var placement))
+        _landing = true;
+        try
         {
-            var x = (int)Math.Round(placement.X);
-            var floor = (int)Math.Round(placement.Y);
-            var fallStartY = Position.Y;
-            var fallStep = ProductEditionInfo.IsYaroro ? 32 : 22;
-            for (var y = Position.Y; y < floor; y = Math.Min(floor, y + fallStep))
+            SetCharacterFrame(CharacterImageSlot.Fall);
+            _character.RenderTransform = new RotateTransform(-4);
+            RefreshWindowSurfaces();
+            var currentPetWidth = PetPixelWidth();
+            var currentPetHeight = PetPixelHeight();
+            var petBottom = Position.Y + currentPetHeight;
+            var candidates = GetAvailableSurfaces()
+                .Where(surface =>
+                {
+                    var ground = surface.Kind == MovementSurfaceKind.WindowTop
+                        ? surface.Bounds.Y
+                        : surface.Bounds.Bottom;
+                    return (surface.Id == preferredSurfaceId || ground >= petBottom - 48) &&
+                           GetWalkableRanges(surface).Count > 0;
+                })
+                .ToArray();
+            var surface = candidates.FirstOrDefault(candidate => candidate.Id == preferredSurfaceId) ??
+                          MovementGeometry.FindNearest(
+                              candidates,
+                              new DesktopPoint(Position.X + (currentPetWidth / 2), petBottom),
+                              currentPetWidth);
+            var landingRange = surface is null
+                ? null
+                : MovementGeometry.FindNearestRange(GetWalkableRanges(surface), Position.X);
+            if (surface is not null &&
+                landingRange is not null &&
+                MovementGeometry.TryPlace(
+                    surface,
+                    Math.Clamp(Position.X, landingRange.Value.MinimumX, landingRange.Value.MaximumX),
+                    PetPixelWidth(surface),
+                    PetPixelHeight(surface),
+                    out var placement))
             {
+                var x = (int)Math.Round(placement.X);
+                var floor = (int)Math.Round(placement.Y);
+                var fallStartY = Position.Y;
+                var fallStep = ProductEditionInfo.IsYaroro ? 32 : 22;
+                for (var y = Position.Y; y < floor; y = Math.Min(floor, y + fallStep))
+                {
+                    if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+                        return;
+                    Position = new PixelPoint(x, y);
+                    await Task.Delay(16);
+                }
                 if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
                     return;
-                Position = new PixelPoint(x, y);
-                await Task.Delay(16);
+                Position = new PixelPoint(x, floor);
+                AttachToSurface(surface, x);
+                if (ProductEditionInfo.IsYaroro && floor - fallStartY >= 70)
+                {
+                    SetCharacterFrame(CharacterImageSlot.LandStunned);
+                    _character.RenderTransform = null;
+                    await Task.Delay(2500);
+                    if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+                        return;
+                }
             }
-            if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
-                return;
-            Position = new PixelPoint(x, floor);
-            AttachToSurface(surface, x);
-            if (ProductEditionInfo.IsYaroro && floor - fallStartY >= 70)
+            if (MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
             {
-                SetCharacterFrame(CharacterImageSlot.LandStunned);
+                SetCharacterFrame(CharacterImageSlot.Default);
                 _character.RenderTransform = null;
-                await Task.Delay(900);
-                if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
-                    return;
             }
         }
-        if (MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+        finally
         {
-            SetCharacterFrame(CharacterImageSlot.Default);
-            _character.RenderTransform = null;
+            if (operationId == _landingOperationId && !_dragging)
+                _landing = false;
         }
     }
 
@@ -456,7 +468,7 @@ public sealed class PetWindow : Window
         if (_desktopIntegration.IsClickThroughHotKeyPressed())
             ToggleClickThrough();
 
-        if (MovementGeometry.ShouldSynchronizeAttachedSurface(_dragging) &&
+        if (MovementGeometry.ShouldSynchronizeAttachedSurface(_dragging || _landing) &&
             now >= _nextDesktopPollMs)
         {
             _nextDesktopPollMs = now + (_walking ? 500 : 1000);
@@ -473,7 +485,7 @@ public sealed class PetWindow : Window
             _ = TickCareAndTimerAsync();
         }
 
-        var inactive = _dragging || _transitioning || _recovering || _dialogueEditorOpen ||
+        var inactive = _dragging || _landing || _transitioning || _recovering || _dialogueEditorOpen ||
                        _waitingAtFullScreenEdge ||
                        now < _specialAnimationUntilMs ||
                        _petState.Activity == ActivityState.Sleeping ||
@@ -517,7 +529,7 @@ public sealed class PetWindow : Window
 
     private void UpdateAnimation()
     {
-        if (_dragging || !IsVisible) return;
+        if (_dragging || _landing || !IsVisible) return;
         if (++_profilePollTicks >= 4)
         {
             _profilePollTicks = 0;
@@ -1091,8 +1103,15 @@ public sealed class PetWindow : Window
                 : DateTime.MinValue;
             if (settingsWrite != _lastSettingsWriteUtc)
             {
-                _settings = await _store.LoadOrCreateAsync(_paths.SettingsFile, () => new AppSettings());
-                _lastSettingsWriteUtc = settingsWrite;
+                var loadedSettings = await _store.LoadOrCreateAsync(
+                    _paths.SettingsFile,
+                    () => new AppSettings());
+                _settings = loadedSettings.Migrate();
+                if (_settings != loadedSettings)
+                    await _store.SaveAsync(_paths.SettingsFile, _settings);
+                _lastSettingsWriteUtc = File.Exists(_paths.SettingsFile)
+                    ? File.GetLastWriteTimeUtc(_paths.SettingsFile)
+                    : settingsWrite;
                 ApplySettings();
                 QuickSettingsChanged?.Invoke(this, EventArgs.Empty);
             }

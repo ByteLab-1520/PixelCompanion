@@ -435,6 +435,20 @@ static Task TestSettingsCompatibility()
     Assert(settings is not null && settings.Language == "ko", "v0.2 settings were not read");
     Assert(settings!.MovementSurfaceMode == MovementSurfaceMode.DesktopAndWindows, "new surface default was not applied");
     Assert(settings.FullScreenBehavior == FullScreenBehavior.WaitAtEdge, "new full-screen default was not applied");
+
+    const string v052Json = """{"schemaVersion":2,"fullScreenBehavior":"Hide"}""";
+    var v052Settings = JsonSerializer.Deserialize<AppSettings>(
+        v052Json,
+        new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        });
+    var migrated = v052Settings!.Migrate();
+    Assert(migrated.SchemaVersion == 3, "v0.5.2 settings schema was not migrated");
+    Assert(
+        migrated.FullScreenBehavior == FullScreenBehavior.WaitAtEdge,
+        "legacy full-screen Hide default was not migrated to edge waiting");
     return Task.CompletedTask;
 }
 
@@ -446,7 +460,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.5.2";
+    const string version = "0.5.3";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");

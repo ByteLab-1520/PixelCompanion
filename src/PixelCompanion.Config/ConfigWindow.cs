@@ -312,7 +312,14 @@ public sealed class ConfigWindow : Window
     private static Control Label(string text, Control control)
     {
         var panel = new Grid { ColumnDefinitions = new ColumnDefinitions("220,*") };
-        var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center };
+        var label = new TextBlock
+        {
+            Text = text,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 12, 0),
+            MaxWidth = 208
+        };
         Grid.SetColumn(control, 1);
         panel.Children.Add(label);
         panel.Children.Add(control);
@@ -321,7 +328,10 @@ public sealed class ConfigWindow : Window
 
     private async Task LoadAsync()
     {
-        _settings = await _store.LoadOrCreateAsync(_paths.SettingsFile, () => new AppSettings());
+        var loadedSettings = await _store.LoadOrCreateAsync(_paths.SettingsFile, () => new AppSettings());
+        _settings = loadedSettings.Migrate();
+        if (_settings != loadedSettings)
+            await _store.SaveAsync(_paths.SettingsFile, _settings);
         _language.SelectedIndex = _settings.Language switch { "en" => 1, "ko" => 2, _ => 0 };
         _speed.SelectedItem = _settings.MovementSpeed.ToString();
         _movementSurface.SelectedItem = _settings.MovementSurfaceMode.ToString();

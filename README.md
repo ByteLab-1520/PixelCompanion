@@ -2,14 +2,14 @@
 
 ```text
 ┌──────────────────────────────────────────┐
-│   PIXEL COMPANION FOR YARORO  v0.5.2     │
+│   PIXEL COMPANION FOR YARORO  v0.5.3     │
 │          화면 한쪽에서, 조용히 함께       │
 └──────────────────────────────────────────┘
 ```
 
 **야로로가 바탕화면과 프로그램 창 위를 천천히 돌아다니는 데스크톱 컴패니언**
 
-[![Version](https://img.shields.io/badge/version-0.5.2-6f7cff?style=flat-square)](Directory.Build.props)
+[![Version](https://img.shields.io/badge/version-0.5.3-6f7cff?style=flat-square)](Directory.Build.props)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12.1-8B44AC?style=flat-square)](https://avaloniaui.net/)
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?style=flat-square&logo=windows)](.)
@@ -123,7 +123,7 @@ Windows 10·11 x64를 먼저 지원합니다.
 
 ---
 
-## v0.5.2 Hotfix에서 달라진 점
+## v0.5.3 Hotfix에서 달라진 점
 
 - 드래그 중 착지할 창이나 바탕화면을 미리 표시하고, 놓은 뒤 다른 표면으로 바뀌지 않게 했습니다.
 - 창 아래로 충분히 끌어내리면 이전 창을 후보에서 제외해 바탕화면으로 쉽게 옮길 수 있습니다.
@@ -135,8 +135,12 @@ Windows 10·11 x64를 먼저 지원합니다.
 - 대사에 배고픔·피로도·행복도·시간대 조건을 설정할 수 있습니다.
 - 동작이 한눈에 보이는 꼬리 프로펠러와 낙하·기절 착지 전용 이미지를 사용합니다.
 - 전체 화면 프로그램을 감지하면 기본적으로 화면 오른쪽 아래 모서리에 앉아 조용히 기다리고, 종료 후 이전 자리로 돌아갑니다.
+- 고급 설정의 긴 한·영 항목명이 입력창과 겹치지 않도록 자동 줄바꿈합니다.
+- 낙하 중 일반 애니메이션이 끼어들어 기본 이미지가 깜빡이던 문제를 수정했습니다.
+- 높은 곳에 착지한 뒤 `X X` 상태를 2.5초 동안 보여 줍니다.
+- 이전 버전에서 저장된 전체 화면 `숨기기` 기본값을 한 번만 `모서리 대기`로 이전합니다.
 
-자세한 기록은 [v0.5.2 Hotfix 변경사항](docs/releases/v0.5.2.md)에서 볼 수 있습니다.
+자세한 기록은 [v0.5.3 Hotfix 변경사항](docs/releases/v0.5.3.md)에서 볼 수 있습니다.
 
 ---
 
@@ -177,7 +181,7 @@ dotnet run --project tests/PixelCompanion.Core.Tests -c Release -p:ProductEditio
 [Inno Setup](https://jrsoftware.org/isinfo.php)을 설치한 뒤 실행합니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.5.2 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.5.3 -Edition Yaroro
 ```
 
 완성된 설치 파일:
@@ -197,7 +201,7 @@ artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe
 | 버전 | 목표 |
 |---|---|
 | `v0.4.4` | 낙하 중 다시 잡기, 대사 확인창, 기본 이미지 미리보기 안정화 |
-| `v0.5.2` | 편한 창 이동, 화풍을 맞춘 야로로 낙하 반응, 육성·타이머와 전체 화면 모서리 대기 |
+| `v0.5.3` | 안정적인 낙하·기절 착지, 설정 UI 정렬과 전체 화면 모서리 대기 이전 |
 | `v0.6.0` | 자리 비움·복귀, 전체 화면, 배터리·충전, 음악·영상 반응 |
 | `v0.7.0` | 스프라이트 시트, FPS, 기준점, 히트박스와 소품 편집 |
 | `v0.8.0` | macOS Apple Silicon·x64 시험 지원 |

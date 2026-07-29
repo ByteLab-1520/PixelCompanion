@@ -26,7 +26,7 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
 
-## What's new in v0.5.2 Hotfix
+## What's new in v0.5.3 Hotfix
 
 - Selects and previews the intended window or desktop landing surface while dragging.
 - Detaches cleanly from the previous window when dragged downward, and lets `Esc` restore the starting position.
@@ -37,6 +37,10 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Adds hunger, fatigue, happiness, and time-range conditions to the in-app dialogue editor.
 - Uses dedicated, easy-to-read illustrations for Yaroro's drag-propeller and fall/landing reactions.
 - Makes quiet sitting in the bottom-right corner the default behavior while a foreground app is full screen, then restores the previous surface afterward.
+- Wraps long bilingual Advanced Settings labels so they never overlap their input controls.
+- Holds the dedicated falling frame for the complete fall instead of allowing the idle animation timer to flash the default frame.
+- Extends Yaroro's X-eyed stunned landing from 0.9 seconds to 2.5 seconds.
+- Migrates the legacy saved full-screen Hide default to edge waiting once.
 
 ## v0.4.4 Falling Grab Hot Fix
 
@@ -162,8 +166,8 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Install Inno Setup 6, then run this command from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.5.2 -Edition Standard
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.5.2 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.5.3 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.5.3 -Edition Yaroro
 ```
 
 The installers are written to `artifacts/windows/standard/installer/` and `artifacts/windows/yaroro/installer/`. See the [Windows packaging guide](packaging/windows/README.md) for details.

@@ -26,7 +26,10 @@ public sealed class App : Application
             var paths = new AppPaths();
             paths.EnsureCreated();
             var store = new AtomicJsonStore();
-            var settings = await store.LoadOrCreateAsync(paths.SettingsFile, () => new AppSettings());
+            var loadedSettings = await store.LoadOrCreateAsync(paths.SettingsFile, () => new AppSettings());
+            var settings = loadedSettings.Migrate();
+            if (settings != loadedSettings)
+                await store.SaveAsync(paths.SettingsFile, settings);
             var state = await store.LoadOrCreateAsync(paths.PetStateFile, () => new PetState());
             state = new PetStateService().ApplyElapsed(state, DateTimeOffset.UtcNow);
 

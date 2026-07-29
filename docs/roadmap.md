@@ -88,6 +88,14 @@
 - Make quiet bottom-right corner sitting the default while a foreground application is full screen, then restore the previous surface.
 - Keep Standard and Yaroro data, custom images, dialogues, and installers compatible.
 
+## 0.5.3 UI and Landing Hotfix
+
+- Wrap bilingual labels in Advanced Settings without allowing text to overlap input controls.
+- Treat falling and stunned landing as one exclusive animation operation.
+- Prevent idle, walking, sleeping, and profile refresh animation ticks from replacing the active fall frame.
+- Keep the stunned landing visible for 2.5 seconds and preserve mid-air grab cancellation.
+- Migrate the legacy saved full-screen Hide default to quiet edge waiting.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.

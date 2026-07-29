@@ -346,7 +346,9 @@ public sealed class MovementRegionEditorWindow : Window
                 .ToList()
         };
         await _store.SaveAsync(_paths.RegionsFile, collection);
-        var settings = await _store.LoadOrCreateAsync(_paths.SettingsFile, () => new AppSettings());
+        var settings = (await _store.LoadOrCreateAsync(
+            _paths.SettingsFile,
+            () => new AppSettings())).Migrate();
         await _store.SaveAsync(_paths.SettingsFile, settings with { RegionMode = RegionMode.Custom });
         Close();
     }

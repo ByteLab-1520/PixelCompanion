@@ -10,7 +10,7 @@ public enum FullScreenBehavior { Hide, WaitAtEdge, Ignore }
 
 public sealed record AppSettings
 {
-    public int SchemaVersion { get; init; } = 2;
+    public int SchemaVersion { get; init; } = 3;
     public string Language { get; init; } = "auto";
     public string ActiveCharacterId { get; init; } = ProductEditionInfo.DefaultCharacterId;
     public bool CharacterVisible { get; init; } = true;
@@ -32,6 +32,15 @@ public sealed record AppSettings
     public MovementSurfaceMode MovementSurfaceMode { get; init; } = MovementSurfaceMode.DesktopAndWindows;
     public FullScreenBehavior FullScreenBehavior { get; init; } = FullScreenBehavior.WaitAtEdge;
     public string[] ExcludedWindowProcesses { get; init; } = [];
+
+    public AppSettings Migrate() =>
+        SchemaVersion >= 3
+            ? this
+            : this with
+            {
+                SchemaVersion = 3,
+                FullScreenBehavior = FullScreenBehavior.WaitAtEdge
+            };
 }
 
 public sealed record MovementRegion(string Id, string Name, double X, double Y, double Width, double Height)
