@@ -438,12 +438,19 @@ public sealed class DialogueEditorWindow : Window
             Width = 420,
             Height = 180,
             CanResize = false,
+            Topmost = true,
+            ShowActivated = true,
             WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
         var discard = new Button { Content = _localization.Get("dialogueEditor.discard"), MinWidth = 100 };
         var cancel = new Button { Content = _localization.Get("dialogueEditor.cancel"), MinWidth = 100 };
         discard.Click += (_, _) => dialog.Close(true);
         cancel.Click += (_, _) => dialog.Close(false);
+        dialog.Opened += (_, _) =>
+        {
+            dialog.Activate();
+            cancel.Focus();
+        };
         dialog.Content = new StackPanel
         {
             Margin = new Thickness(22),

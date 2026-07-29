@@ -75,6 +75,7 @@ public sealed class PetWindow : Window
     private int _specialAnimationFrame;
     private bool _dialogueEditorOpen;
     private int _obstacleTurnDirection;
+    private int _landingOperationId;
 
     public bool BehaviorPaused => _settings.BehaviorPaused;
     public bool ClickThrough => _settings.ClickThrough;
@@ -234,6 +235,7 @@ public sealed class PetWindow : Window
         var point = e.GetCurrentPoint(this);
         if (point.Properties.IsRightButtonPressed) return;
         if (!point.Properties.IsLeftButtonPressed) return;
+        _landingOperationId++;
         _dragging = true;
         _walking = false;
         _specialAnimationUntilMs = 0;
@@ -262,11 +264,15 @@ public sealed class PetWindow : Window
         }
         _dragging = false;
         e.Pointer.Capture(null);
-        await LandAsync();
+        var operationId = ++_landingOperationId;
+        await LandAsync(operationId);
     }
 
-    private async Task LandAsync()
+    private async Task LandAsync(int operationId)
     {
+        if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+            return;
+
         _character.RenderTransform = new RotateTransform(-4);
         RefreshWindowSurfaces();
         var currentPetWidth = PetPixelWidth();
@@ -301,13 +307,18 @@ public sealed class PetWindow : Window
             var floor = (int)Math.Round(placement.Y);
             for (var y = Position.Y; y < floor; y = Math.Min(floor, y + 18))
             {
+                if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+                    return;
                 Position = new PixelPoint(x, y);
                 await Task.Delay(16);
             }
+            if (!MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+                return;
             Position = new PixelPoint(x, floor);
             AttachToSurface(surface, x);
         }
-        _character.RenderTransform = null;
+        if (MovementGeometry.CanContinueLanding(operationId, _landingOperationId, _dragging))
+            _character.RenderTransform = null;
     }
 
     private void UpdateMovement()

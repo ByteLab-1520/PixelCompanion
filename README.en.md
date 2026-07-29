@@ -26,6 +26,14 @@ Pixel Companion is an offline-first, non-disruptive pixel desktop pet for Window
 - Drag-and-drop PNG, JPEG, and GIF character image slots with walking-frame fallbacks
 - Daily GitHub Release checks, with automatic installation restricted to signed releases
 
+## v0.4.4 Falling Grab Hot Fix
+
+- Cancels the previous fall and landing as soon as the companion is grabbed in mid-air.
+- Allows only the most recent landing operation to change the pet's position or supporting surface.
+- Uses only `안녕? 야로로대장이야` as Yaroro's default Korean click greeting.
+- Removes the untouched legacy second greeting while preserving dialogue added or edited by the user.
+- Removes stray white edge fragments from Yaroro's second eating frame and first sleeping frame.
+
 ## v0.4.3 UI & Drag Hot Fix
 
 - Adds vertical scrolling to the dialogue fields so they no longer overlap the fixed footer on small windows or high-DPI displays.
@@ -142,8 +150,8 @@ dotnet run --project tests/PixelCompanion.Core.Tests
 Install Inno Setup 6, then run this command from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.3 -Edition Standard
-powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.3 -Edition Yaroro
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.4 -Edition Standard
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-WindowsInstaller.ps1 -Version 0.4.4 -Edition Yaroro
 ```
 
 The installers are written to `artifacts/windows/standard/installer/` and `artifacts/windows/yaroro/installer/`. See the [Windows packaging guide](packaging/windows/README.md) for details.

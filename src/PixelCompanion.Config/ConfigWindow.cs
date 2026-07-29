@@ -272,10 +272,13 @@ public sealed class ConfigWindow : Window
         {
             if (_previewBitmaps.Remove(slot, out var previous)) previous.Dispose();
             _characterPreviews[slot].Source = null;
-            var path = _characterService.ResolvePath(profile, slot);
-            _characterFileNames[slot].Text = path is null
-                ? "Not set / 미설정"
-                : Path.GetFileName(path);
+            var customPath = _characterService.ResolvePath(profile, slot);
+            var path = customPath ?? FindBundledCharacterImage(slot);
+            _characterFileNames[slot].Text = customPath is not null
+                ? Path.GetFileName(customPath)
+                : path is not null
+                    ? "Bundled / 기본 제공"
+                    : "Not set / 미설정";
             if (path is null) continue;
 
             try
@@ -390,6 +393,32 @@ public sealed class ConfigWindow : Window
     {
         var candidate = Path.Combine(AppContext.BaseDirectory, "characters", ProductEditionInfo.DefaultCharacterFolder);
         return Directory.Exists(candidate) ? candidate : null;
+    }
+
+    private static string? FindBundledCharacterImage(CharacterImageSlot slot)
+    {
+        var root = FindBundledCharacterRoot();
+        if (root is null) return null;
+
+        var prefix = ProductEditionInfo.IsYaroro ? "yaroro" : "default-cat";
+        var fileName = slot == CharacterImageSlot.Default
+            ? ProductEditionInfo.IsYaroro ? "yaroro-default.png" : "default-cat.png"
+            : slot switch
+        {
+            CharacterImageSlot.Back => $"{prefix}-back.png",
+            CharacterImageSlot.Walk1 => $"{prefix}-walk-1.png",
+            CharacterImageSlot.Walk2 => $"{prefix}-walk-2.png",
+            CharacterImageSlot.Walk3 => $"{prefix}-walk-3.png",
+            CharacterImageSlot.Eat1 => $"{prefix}-eat-1.png",
+            CharacterImageSlot.Eat2 => $"{prefix}-eat-2.png",
+            CharacterImageSlot.Sleep1 => $"{prefix}-sleep-1.png",
+            CharacterImageSlot.Sleep2 => $"{prefix}-sleep-2.png",
+            _ => null
+        };
+        if (fileName is null) return null;
+
+        var path = Path.Combine(root, "sprites", fileName);
+        return File.Exists(path) ? path : null;
     }
 
     private async void OnClosing(object? sender, WindowClosingEventArgs e)

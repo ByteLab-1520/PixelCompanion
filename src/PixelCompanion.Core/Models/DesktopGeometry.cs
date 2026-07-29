@@ -39,6 +39,12 @@ public static class MovementGeometry
 {
     public static bool ShouldSynchronizeAttachedSurface(bool isDragging) => !isDragging;
 
+    public static bool CanContinueLanding(
+        int operationId,
+        int currentOperationId,
+        bool isDragging) =>
+        !isDragging && operationId == currentOperationId;
+
     public static bool TryPlace(
         MovementSurface surface,
         double requestedX,

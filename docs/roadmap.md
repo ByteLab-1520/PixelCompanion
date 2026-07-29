@@ -65,6 +65,16 @@
 - Refresh surfaces when the pointer is released, then land on the nearest valid window or desktop surface without requiring the supporting window to close.
 - Cover the drag synchronization rule with a regression test.
 
+## 0.4.4 Falling Grab Hot Fix
+
+- Cancel an in-progress fall and landing when the character is grabbed again.
+- Prevent outdated landing operations from moving or reattaching a newly dragged character.
+- Keep Yaroro's default Korean greeting to one captain-introduction line while preserving user-authored dialogue.
+- Keep the unsaved-dialogue confirmation above the modal editor and focus its safe cancel action.
+- Preview every bundled character image in Advanced Settings when no custom image is selected.
+- Remove stray right-edge fragments from Yaroro's second eating and first sleeping frames.
+- Refresh the Korean README around the Yaroro edition and current application captures.
+
 ## Next milestones
 
 1. Continue Windows non-disruption testing against common desktop apps and refine window-surface behavior.

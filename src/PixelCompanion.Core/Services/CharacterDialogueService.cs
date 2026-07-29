@@ -73,15 +73,16 @@ public sealed class CharacterDialogueService(AppPaths paths, AtomicJsonStore sto
             Language = language,
             Groups = new Dictionary<string, List<DialogueLine>>(StringComparer.Ordinal)
             {
-                [DialogueGroupIds.Click] =
-                [
-                    new DialogueLine(
-                        "click.1",
-                        IsKoreanYaroro(characterId, language)
-                            ? "안녕? 야로로대장이야"
-                            : getText("dialogue.click.1")),
-                    new DialogueLine("click.2", getText("dialogue.click.2"))
-                ],
+                [DialogueGroupIds.Click] = IsKoreanYaroro(characterId, language)
+                    ?
+                    [
+                        new DialogueLine("click.1", "안녕? 야로로대장이야")
+                    ]
+                    :
+                    [
+                        new DialogueLine("click.1", getText("dialogue.click.1")),
+                        new DialogueLine("click.2", getText("dialogue.click.2"))
+                    ],
                 [DialogueGroupIds.Feed] =
                 [
                     new DialogueLine("feed.1", getText("dialogue.feed"))
@@ -103,13 +104,20 @@ public sealed class CharacterDialogueService(AppPaths paths, AtomicJsonStore sto
             !catalog.Groups.TryGetValue(DialogueGroupIds.Click, out var lines))
             return false;
 
+        var changed = false;
         var index = lines.FindIndex(line =>
             line.Id == "click.1" &&
             line.Text == "안녕! 옆에서 조용히 함께하고 있었어.");
-        if (index < 0) return false;
+        if (index >= 0)
+        {
+            lines[index] = lines[index] with { Text = "안녕? 야로로대장이야" };
+            changed = true;
+        }
 
-        lines[index] = lines[index] with { Text = "안녕? 야로로대장이야" };
-        return true;
+        changed |= lines.RemoveAll(line =>
+            line.Id == "click.2" &&
+            line.Text == "오늘 하는 일도 잘 풀리면 좋겠다.") > 0;
+        return changed;
     }
 
     private static bool IsKoreanYaroro(string characterId, string language) =>

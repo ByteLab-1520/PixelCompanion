@@ -116,8 +116,8 @@ static async Task TestCharacterDialogues()
 
         var yaroroDefaults = CharacterDialogueService.CreateDefaults("yaroro", "ko", key => key);
         Assert(
-            yaroroDefaults.GetGroup(DialogueGroupIds.Click)[0].Text == "안녕? 야로로대장이야",
-            "Yaroro's Korean greeting default is incorrect");
+            yaroroDefaults.GetGroup(DialogueGroupIds.Click).Single().Text == "안녕? 야로로대장이야",
+            "Yaroro's Korean greeting must contain only the captain introduction");
         var legacyYaroro = yaroroDefaults with
         {
             Groups = yaroroDefaults.Groups.ToDictionary(
@@ -126,16 +126,20 @@ static async Task TestCharacterDialogues()
                     ?
                     [
                         new DialogueLine("click.1", "안녕! 옆에서 조용히 함께하고 있었어."),
-                        pair.Value[1]
+                        new DialogueLine("click.2", "오늘 하는 일도 잘 풀리면 좋겠다."),
+                        new DialogueLine("custom.1", "사용자가 추가한 인사")
                     ]
                     : pair.Value,
                 StringComparer.Ordinal)
         };
         await service.SaveAsync(legacyYaroro);
         var migratedYaroro = await service.LoadAsync("yaroro", "ko", () => yaroroDefaults);
+        var migratedGreetings = migratedYaroro.GetGroup(DialogueGroupIds.Click);
+        Assert(migratedGreetings.Count == 2, "Yaroro's legacy default greeting was not removed");
         Assert(
-            migratedYaroro.GetGroup(DialogueGroupIds.Click)[0].Text == "안녕? 야로로대장이야",
-            "Yaroro's untouched legacy greeting was not migrated");
+            migratedGreetings[0].Text == "안녕? 야로로대장이야" &&
+            migratedGreetings[1].Text == "사용자가 추가한 인사",
+            "Yaroro's greeting migration did not preserve the custom line");
 
         var invalid = loaded with
         {
@@ -309,6 +313,12 @@ static Task TestMovementGeometry()
         "an attached idle pet should continue following its surface");
     Assert(!MovementGeometry.ShouldSynchronizeAttachedSurface(isDragging: true),
         "surface tracking must not pull a dragged pet back onto a window");
+    Assert(MovementGeometry.CanContinueLanding(7, 7, isDragging: false),
+        "the current landing operation should be allowed to continue");
+    Assert(!MovementGeometry.CanContinueLanding(7, 8, isDragging: false),
+        "an outdated landing operation must stop");
+    Assert(!MovementGeometry.CanContinueLanding(8, 8, isDragging: true),
+        "grabbing a falling pet must cancel landing");
     var draggedToDesktop = MovementGeometry.FindNearest(
         [window, desktop],
         new DesktopPoint(-960, desktop.Bounds.Bottom),
@@ -382,7 +392,7 @@ static async Task TestReleaseVersionConsistency()
     var finalizeScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Finalize-WindowsRelease.ps1"));
     var smokeTestScript = await File.ReadAllTextAsync(Path.Combine(root, "scripts", "Test-WindowsInstaller.ps1"));
     var installer = await File.ReadAllTextAsync(Path.Combine(root, "packaging", "windows", "PixelCompanion.iss"));
-    const string version = "0.4.3";
+    const string version = "0.4.4";
     Assert(props.Contains($"<Version>{version}</Version>", StringComparison.Ordinal), "project version is inconsistent");
     Assert(buildScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "build script version is inconsistent");
     Assert(finalizeScript.Contains($"$Version = '{version}'", StringComparison.Ordinal), "finalize script version is inconsistent");
