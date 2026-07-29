@@ -37,10 +37,10 @@ jobs:
         run: .\scripts\Build-WindowsInstaller.ps1 -Edition Yaroro
       - name: Smoke-test Standard installer
         shell: powershell
-        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\standard\installer\PixelCompanion-Installer.exe -Version 0.4.2 -Edition Standard
+        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\standard\installer\PixelCompanion-Installer.exe -Edition Standard
       - name: Smoke-test for Yaroro installer
         shell: powershell
-        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe -Version 0.4.2 -Edition Yaroro
+        run: .\scripts\Test-WindowsInstaller.ps1 -InstallerPath .\artifacts\windows\yaroro\installer\PixelCompanion-Yaroro-Installer.exe -Edition Yaroro
       - uses: actions/upload-artifact@v4
         with:
           name: PixelCompanion-Windows-Installers
